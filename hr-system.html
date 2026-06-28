@@ -265,7 +265,12 @@ function Recruitment() {
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+       headers: { 
+  "Content-Type": "application/json",
+  "x-api-key": "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",
+  "anthropic-version": "2023-06-01",
+  "anthropic-dangerous-direct-browser-access": "true"
+},
         body: JSON.stringify({
           model: "claude-sonnet-4-6", max_tokens: 1200,
           messages: [{ role: "user", content: `You are a child-safe HR screener for A Safe Haven Children's Home Foundation, Inc. — a DSWD-accredited residential child care facility in Davao City, Philippines.\n\nRole being screened: ${ROLE_LABELS[selectedRole]}\n\nSafe Haven values: Love, Joy, Excellence, Faithfulness, Respect.\nAll staff must comply with DSWD AO 16 s.2004, RA 7610, RA 10173, RA 11313.\nChild protection is non-negotiable. NBI Clearance is a hard requirement.\n\nReview this applicant's written response and provide:\n1. SUITABILITY SCORE (1-10) for child-safe ${ROLE_LABELS[selectedRole]} work\n2. GREEN FLAGS — positive indicators (specific quotes)\n3. RED FLAGS — concerning signals or gaps (specific quotes or absences)\n4. CHILD SAFETY SIGNALS — anything suggesting risk or strength in child protection awareness\n5. VERIFICATION NEEDED — what HR must manually confirm\n6. RECOMMENDED NEXT STEP: "Proceed to Aptitude Test" / "Hold — clarify first" / "Do Not Proceed"\n7. RATIONALE (2-3 sentences)\n\nBe firm. Quote actual words. Do not soften red flags.\n\nApplicant Response:\n${applicantText}` }]
