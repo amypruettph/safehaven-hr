@@ -1246,7 +1246,7 @@ function HRAssistant() {
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method:"POST",
-        headers:{ "Content-Type":"application/json", "x-api-key":"YOUR_KEY_HERE", "anthropic-version":"2023-06-01", "anthropic-dangerous-direct-browser-access":"true" },
+        headers:{ "Content-Type":"application/json", "x-api-key":"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", "anthropic-version":"2023-06-01", "anthropic-dangerous-direct-browser-access":"true" },
         body:JSON.stringify({
           model:"claude-sonnet-4-6", max_tokens:900,
           system:`You are the HR assistant for A Safe Haven Children's Home Foundation, Inc., a DSWD-accredited residential child care facility in Davao City, Philippines. You answer questions for Jackson (HR), supervisors, and the Executive Director.
