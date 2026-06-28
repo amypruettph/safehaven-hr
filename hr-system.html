@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Safe Haven HR System</title>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const {useState,useEffect,useRef,useCallback}=React;
+
+// ═══════════════════════════════════════════════════════════════════
+// SAFE HAVEN CHILDREN'S HOME FOUNDATION, INC.
+// Complete HR System — Phase 1
+// Screening → Onboarding → Records → Performance → Training →
+// Discipline → Exit → AI Assistant
+// Sprouts PH integration: timekeeping & payroll remain in Sprouts
+// Data layer: Google Sheets + Google Drive (Phase 2 → Supabase)
+// ═══════════════════════════════════════════════════════════════════
+
+// ── Design tokens ───────────────────────────────────────────────
+const T = {
+  navy:    "#1B2B4B",
+  navyMid: "#243660",
+  teal:    "#2A7A7A",
+  teal2:   "#3AADAD",
+  gold:    "#C8941A",
+  gold2:   "#F0C060",
+  cream:   "#F7F4EE",
+  white:   "#FFFFFF",
+  red:     "#B83232",
+  redL:    "#FDEAEA",
+  green:   "#1A6B3C",
+  greenL:  "#EAFAF1",
+  amber:   "#C47A15",
+  amberL:  "#FEF6E4",
+  gray:    "#6B7280",
+  grayL:   "#E5E7EB",
+  dark:    "#374151",
+  ink:     "#1A1A2E",
+};
+
+// ── Navigation modules ──────────────────────────────────────────
+const MODULES = [
+  { id:"dashboard",    icon:"🏠", label:"Dashboard",        group:"main" },
+  { id:"recruitment",  icon:"🔍", label:"Recruitment",      group:"hiring" },
+  { id:"onboarding",   icon:"📋", label:"Onboarding",       group:"hiring" },
+  { id:"employees",    icon:"👥", label:"Employee Records",  group:"people" },
+  { id:"performance",  icon:"📈", label:"Performance",       group:"people" },
+  { id:"training",     icon:"🎓", label:"Training",          group:"people" },
+  { id:"discipline",   icon:"⚖️", label:"Discipline",        group:"compliance" },
+  { id:"exit",         icon:"🚪", label:"Exit & Offboarding",group:"compliance" },
+  { id:"assistant",    icon:"🤖", label:"HR Assistant",      group:"tools" },
+  { id:"settings",     icon:"⚙️", label:"Settings",          group:"tools" },
+];
+
+const GROUPS = {
+  main:       { label: "" },
+  hiring:     { label: "HIRING" },
+  people:     { label: "PEOPLE" },
+  compliance: { label: "COMPLIANCE" },
+  tools:      { label: "TOOLS" },
+};
+
+// ── Shared UI ───────────────────────────────────────────────────
+const Badge = ({ label, color = T.teal, size = "sm" }) => (
+  <span style={{
+    background: color + "22", color, border: `1px solid ${color}44`,
+    borderRadius: 4, padding: size === "lg" ? "4px 12px" : "2px 8px",
+    fontSize: size === "lg" ? 12 : 10, fontWeight: 700, letterSpacing: 0.4,
+    whiteSpace: "nowrap",
+  }}>{label}</span>
+);
+
+const Alert = ({ type = "info", children }) => {
+  const m = {
+    danger:  { bg: T.redL,   border: T.red,   icon: "🚨" },
+    warning: { bg: T.amberL, border: T.amber, icon: "⚠️" },
+    info:    { bg: "#EFF6FF", border: T.teal,  icon: "ℹ️" },
+    success: { bg: T.greenL, border: T.green, icon: "✅" },
+  };
+  const s = m[type] || m.info;
+  return (
+    <div style={{ background: s.bg, borderLeft: `4px solid ${s.border}`, borderRadius: "0 8px 8px 0", padding: "10px 14px", marginBottom: 12, fontSize: 13, color: T.dark, display: "flex", gap: 8 }}>
+      <span style={{ flexShrink: 0 }}>{s.icon}</span><div>{children}</div>
+    </div>
+  );
+};
+
+const Card = ({ children, style = {} }) => (
+  <div style={{ background: T.white, borderRadius: 12, border: `1px solid ${T.grayL}`, padding: 20, marginBottom: 16, ...style }}>
+    {children}
+  </div>
+);
+
+const SectionTitle = ({ icon, title, subtitle, color = T.navy }) => (
+  <div style={{ marginBottom: 20 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+      <div style={{ width: 38, height: 38, borderRadius: 10, background: color + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{icon}</div>
+      <div>
+        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: T.navy, letterSpacing: -0.3 }}>{title}</h2>
+        {subtitle && <p style={{ margin: 0, fontSize: 12, color: T.gray, marginTop: 2 }}>{subtitle}</p>}
+      </div>
+    </div>
+    <div style={{ height: 2, background: `linear-gradient(90deg, ${color}, transparent)`, borderRadius: 2, marginTop: 8 }} />
+  </div>
+);
+
+const Btn = ({ children, onClick, color = T.teal, outline = false, size = "md", disabled = false }) => (
+  <button onClick={onClick} disabled={disabled} style={{
+    padding: size === "sm" ? "6px 12px" : size === "lg" ? "13px 24px" : "9px 18px",
+    borderRadius: 8, border: outline ? `1.5px solid ${color}` : "none",
+    background: disabled ? T.gray : outline ? "transparent" : color,
+    color: outline ? color : T.white,
+    fontWeight: 700, fontSize: size === "sm" ? 12 : 13,
+    cursor: disabled ? "not-allowed" : "pointer", transition: "all 0.15s",
+    opacity: disabled ? 0.6 : 1,
+  }}>{children}</button>
+);
+
+const Field = ({ label, children, hint, required }) => (
+  <div style={{ marginBottom: 14 }}>
+    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: T.dark, marginBottom: 5 }}>
+      {label} {required && <span style={{ color: T.red }}>*</span>}
+    </label>
+    {children}
+    {hint && <div style={{ fontSize: 11, color: T.gray, marginTop: 3, lineHeight: 1.5 }}>{hint}</div>}
+  </div>
+);
+
+const Input = ({ value, onChange, placeholder, type = "text", ...rest }) => (
+  <input type={type} value={value} onChange={onChange} placeholder={placeholder}
+    style={{ width: "100%", padding: "9px 12px", border: `1.5px solid ${T.grayL}`, borderRadius: 8, fontSize: 13, fontFamily: "inherit", outline: "none", color: T.dark, boxSizing: "border-box" }}
+    {...rest} />
+);
+
+const Select = ({ value, onChange, children }) => (
+  <select value={value} onChange={onChange}
+    style={{ width: "100%", padding: "9px 12px", border: `1.5px solid ${T.grayL}`, borderRadius: 8, fontSize: 13, fontFamily: "inherit", outline: "none", color: T.dark, background: T.white }}>
+    {children}
+  </select>
+);
+
+const Textarea = ({ value, onChange, placeholder, rows = 4 }) => (
+  <textarea value={value} onChange={onChange} placeholder={placeholder} rows={rows}
+    style={{ width: "100%", padding: "9px 12px", border: `1.5px solid ${T.grayL}`, borderRadius: 8, fontSize: 13, fontFamily: "inherit", outline: "none", color: T.dark, resize: "vertical", lineHeight: 1.6, boxSizing: "border-box" }} />
+);
+
+// ── Compliance tag strip ─────────────────────────────────────────
+const ComplianceTags = ({ tags }) => (
+  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
+    {tags.map(t => <Badge key={t.label} label={t.label} color={t.color || T.teal} />)}
+  </div>
+);
+
+// ═══════════════════════════════════════════════════════════════════
+// MODULE: DASHBOARD
+// ═══════════════════════════════════════════════════════════════════
+function Dashboard({ navigate }) {
+  const alerts = [
+    { type: "danger",  msg: "Month 5 deadline approaching — 2 employees need regularization decision within 14 days.", action: "View Performance" },
+    { type: "danger",  msg: "3 child-contact staff have no Child Protection Training on file. Cannot be deployed.", action: "View Training" },
+    { type: "warning", msg: "NBI Clearance expiring in 30 days — 2 employees need renewal.", action: "View Records" },
+    { type: "warning", msg: "Day 60 evaluation overdue — 1 employee, supervisor has not submitted.", action: "View Performance" },
+    { type: "info",    msg: "2 new applicants submitted pre-screen forms this week.", action: "View Recruitment" },
+  ];
+
+  const stats = [
+    { num: "18", label: "Total Staff", icon: "👥", color: T.navy },
+    { num: "3",  label: "On Probation", icon: "📋", color: T.amber },
+    { num: "2",  label: "Compliance Flags", icon: "🚨", color: T.red },
+    { num: "5",  label: "Reviews Due", icon: "📈", color: T.teal },
+  ];
+
+  const quickLinks = [
+    { icon: "🔍", label: "Start Screening",     sub: "New applicant intake",       mod: "recruitment" },
+    { icon: "📋", label: "New Hire Checklist",   sub: "Begin onboarding",           mod: "onboarding" },
+    { icon: "📈", label: "Probationary Review",  sub: "30/60/90/Month 5",           mod: "performance" },
+    { icon: "⚖️", label: "Issue an NTE",          sub: "Due process workflow",       mod: "discipline" },
+    { icon: "🎓", label: "Log Training",          sub: "Record completion",          mod: "training" },
+    { icon: "🚪", label: "Exit Clearance",        sub: "Offboard an employee",       mod: "exit" },
+    { icon: "🤖", label: "Ask HR Assistant",      sub: "Policy questions",           mod: "assistant" },
+    { icon: "👥", label: "Employee Records",      sub: "View 201 index",             mod: "employees" },
+  ];
+
+  return (
+    <div>
+      <div style={{ background: `linear-gradient(135deg, ${T.navy} 0%, ${T.teal} 100%)`, borderRadius: 16, padding: "24px 28px", marginBottom: 24, color: T.white }}>
+        <div style={{ fontSize: 11, opacity: 0.7, letterSpacing: 1, marginBottom: 6 }}>SAFE HAVEN CHILDREN'S HOME FOUNDATION, INC.</div>
+        <h1 style={{ margin: "0 0 6px", fontSize: 24, fontWeight: 800, letterSpacing: -0.5 }}>HR Management System</h1>
+        <p style={{ margin: 0, fontSize: 13, opacity: 0.8 }}>DOLE · DSWD · NACC/RACCO · Sprouts PH · RA 10173 · RA 11313 · Phase 1</p>
+        <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
+          {["DOLE Compliant", "DSWD AO 16", "NACC/RACCO Ready", "Sprouts Integrated", "Phase 1 — Google Drive Data Layer"].map(t => (
+            <span key={t} style={{ background: "rgba(255,255,255,0.15)", color: T.white, borderRadius: 20, padding: "3px 10px", fontSize: 10, fontWeight: 700 }}>{t}</span>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 24 }}>
+        {stats.map(s => (
+          <Card key={s.label} style={{ textAlign: "center", padding: 16 }}>
+            <div style={{ fontSize: 26 }}>{s.icon}</div>
+            <div style={{ fontSize: 28, fontWeight: 800, color: s.color, marginTop: 4 }}>{s.num}</div>
+            <div style={{ fontSize: 11, color: T.gray, fontWeight: 600 }}>{s.label}</div>
+          </Card>
+        ))}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: T.gray, letterSpacing: 1, marginBottom: 12 }}>COMPLIANCE ALERTS</div>
+          {alerts.map((a, i) => (
+            <div key={i} style={{ background: T.white, borderRadius: 10, border: `1px solid ${T.grayL}`, borderLeft: `4px solid ${a.type === "danger" ? T.red : a.type === "warning" ? T.amber : T.teal}`, padding: "10px 14px", marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+              <div style={{ fontSize: 12, color: T.dark, lineHeight: 1.5, flex: 1 }}>{a.msg}</div>
+              <Btn size="sm" color={a.type === "danger" ? T.red : T.teal} onClick={() => navigate(MODULES.find(m => a.action.toLowerCase().includes(m.label.toLowerCase().split(" ")[0].toLowerCase()))?.id || "dashboard")}>View →</Btn>
+            </div>
+          ))}
+        </div>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: T.gray, letterSpacing: 1, marginBottom: 12 }}>QUICK ACTIONS</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            {quickLinks.map(l => (
+              <div key={l.mod} onClick={() => navigate(l.mod)} style={{ background: T.white, borderRadius: 10, border: `1px solid ${T.grayL}`, padding: "12px 14px", cursor: "pointer", transition: "all 0.15s" }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = T.teal; e.currentTarget.style.boxShadow = "0 4px 12px rgba(42,122,122,0.1)"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = T.grayL; e.currentTarget.style.boxShadow = "none"; }}>
+                <div style={{ fontSize: 20, marginBottom: 4 }}>{l.icon}</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: T.navy }}>{l.label}</div>
+                <div style={{ fontSize: 11, color: T.gray }}>{l.sub}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 12, background: T.navy + "08", borderRadius: 10, padding: 12, border: `1px solid ${T.navy}15`, fontSize: 11, color: T.gray, lineHeight: 1.7 }}>
+            <strong style={{ color: T.navy }}>Phase 2 unlocks:</strong> persistent data, supervisor logins, automated reminders, and real-time Sprouts sync. This system's URL and design remain the same — Phase 2 adds the database layer underneath.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MODULE: RECRUITMENT
+// ═══════════════════════════════════════════════════════════════════
+function Recruitment() {
+  const [tab, setTab] = useState("tracker");
+  const [aiResult, setAiResult] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [applicantText, setApplicantText] = useState("");
+  const [selectedRole, setSelectedRole] = useState("houseparent");
+
+  const ROLE_LABELS = { houseparent:"House Parent", socialworker:"Social Worker / RSW", admin:"Admin / Finance / HR", teacher:"Teacher / ALS", cook:"Cook / Kitchen" };
+
+  const runScreen = async () => {
+    if (!applicantText.trim()) return;
+    setAiLoading(true); setAiResult("");
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6", max_tokens: 1200,
+          messages: [{ role: "user", content: `You are a child-safe HR screener for A Safe Haven Children's Home Foundation, Inc. — a DSWD-accredited residential child care facility in Davao City, Philippines.\n\nRole being screened: ${ROLE_LABELS[selectedRole]}\n\nSafe Haven values: Love, Joy, Excellence, Faithfulness, Respect.\nAll staff must comply with DSWD AO 16 s.2004, RA 7610, RA 10173, RA 11313.\nChild protection is non-negotiable. NBI Clearance is a hard requirement.\n\nReview this applicant's written response and provide:\n1. SUITABILITY SCORE (1-10) for child-safe ${ROLE_LABELS[selectedRole]} work\n2. GREEN FLAGS — positive indicators (specific quotes)\n3. RED FLAGS — concerning signals or gaps (specific quotes or absences)\n4. CHILD SAFETY SIGNALS — anything suggesting risk or strength in child protection awareness\n5. VERIFICATION NEEDED — what HR must manually confirm\n6. RECOMMENDED NEXT STEP: "Proceed to Aptitude Test" / "Hold — clarify first" / "Do Not Proceed"\n7. RATIONALE (2-3 sentences)\n\nBe firm. Quote actual words. Do not soften red flags.\n\nApplicant Response:\n${applicantText}` }]
+        })
+      });
+      const d = await res.json();
+      setAiResult(d.content?.[0]?.text || "No response.");
+    } catch { setAiResult("Connection error. Try again."); }
+    setAiLoading(false);
+  };
+
+  const TABS = [
+    { id:"tracker", label:"📊 Applicant Tracker" },
+    { id:"requisition", label:"📄 Job Requisition" },
+    { id:"aiscreen", label:"🤖 AI Screener" },
+    { id:"checklist", label:"✅ Pre-Employment" },
+  ];
+
+  const sampleApplicants = [
+    { name: "Maria Santos", role: "House Parent", date: "Jun 20", status: "Pre-screen submitted", score: 82, flag: false },
+    { name: "Juan dela Cruz", role: "Social Worker", date: "Jun 22", status: "Aptitude complete", score: 74, flag: false },
+    { name: "Ana Reyes", role: "House Parent", date: "Jun 24", status: "AI screen flagged", score: 45, flag: true },
+    { name: "Pedro Lim", role: "Cook", date: "Jun 25", status: "Interview 1 scheduled", score: 88, flag: false },
+  ];
+
+  return (
+    <div>
+      <SectionTitle icon="🔍" title="Recruitment" subtitle="From job posting to interview — DSWD/DOLE child-safe hiring" color={T.teal} />
+      <ComplianceTags tags={[{ label:"DSWD AO 16 s.2004" }, { label:"RA 7610" }, { label:"DOLE Fair Employment" }, { label:"MOO Section IX" }]} />
+
+      <div style={{ display: "flex", gap: 6, marginBottom: 20, flexWrap: "wrap" }}>
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} style={{ padding: "7px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: tab === t.id ? 700 : 500, fontSize: 12, background: tab === t.id ? T.teal : T.grayL, color: tab === t.id ? T.white : T.dark, transition: "all 0.15s" }}>{t.label}</button>
+        ))}
+      </div>
+
+      {tab === "tracker" && (
+        <Card>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.navy, marginBottom: 14 }}>Active Applicants</div>
+          <Alert type="info">Send applicants the pre-screen link and aptitude assessment via Messenger. Both are standalone HTML files deployed to Netlify. Track progress here.</Alert>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: T.navy }}>
+                {["Name","Role","Applied","Status","Score","Flag","Action"].map(h => (
+                  <th key={h} style={{ padding: "9px 12px", color: T.white, textAlign: "left", fontWeight: 700, fontSize: 11, letterSpacing: 0.5 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {sampleApplicants.map((a, i) => (
+                <tr key={i} style={{ background: i % 2 === 0 ? T.cream : T.white, borderBottom: `1px solid ${T.grayL}` }}>
+                  <td style={{ padding: "9px 12px", fontWeight: 600, color: T.navy }}>{a.name}</td>
+                  <td style={{ padding: "9px 12px", color: T.dark }}>{a.role}</td>
+                  <td style={{ padding: "9px 12px", color: T.gray }}>{a.date}</td>
+                  <td style={{ padding: "9px 12px" }}><Badge label={a.status} color={a.flag ? T.red : T.teal} /></td>
+                  <td style={{ padding: "9px 12px", fontWeight: 700, color: a.score >= 70 ? T.green : a.score >= 55 ? T.amber : T.red }}>{a.score}%</td>
+                  <td style={{ padding: "9px 12px" }}>{a.flag ? "🚨" : "✓"}</td>
+                  <td style={{ padding: "9px 12px" }}><Btn size="sm" onClick={() => {}}>Review</Btn></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div style={{ marginTop: 16, display: "flex", gap: 10 }}>
+            <Btn color={T.navy} onClick={() => {}}>+ Add Applicant</Btn>
+            <Btn outline color={T.teal} onClick={() => {}}>📤 Export List</Btn>
+          </div>
+          <div style={{ marginTop: 14, background: T.navy + "06", borderRadius: 8, padding: 12, fontSize: 11, color: T.gray, lineHeight: 1.7 }}>
+            <strong>Phase 2:</strong> Applicants submitted directly from the pre-screen form. Tracker auto-updates. Sprouts notified when hire is confirmed.
+          </div>
+        </Card>
+      )}
+
+      {tab === "requisition" && (
+        <Card>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.navy, marginBottom: 14 }}>Job Requisition — ED Approval Required</div>
+          <Alert type="warning">Salary must fall within the approved compensation band per MOO. This requisition must be approved by the Executive Director before any job posting goes live.</Alert>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            {[
+              { label: "Position Title", placeholder: "e.g. House Parent Level 1" },
+              { label: "Department / Program", placeholder: "e.g. Child Development" },
+              { label: "Supervisor", placeholder: "Immediate supervisor position" },
+              { label: "Monthly Rate (PHP)", placeholder: "e.g. 13,260" },
+              { label: "Target Start Date", placeholder: "Estimated start date", type: "date" },
+              { label: "Funding Source", placeholder: "Operating fund / grant" },
+            ].map(f => (
+              <Field key={f.label} label={f.label}>
+                <Input type={f.type || "text"} placeholder={f.placeholder} value="" onChange={() => {}} />
+              </Field>
+            ))}
+          </div>
+          <Field label="Child Contact Role?">
+            <Select value="yes" onChange={() => {}}>
+              <option value="yes">Yes — requires enhanced screening (NBI, CPP, references)</option>
+              <option value="no">No — standard screening applies</option>
+            </Select>
+          </Field>
+          <Field label="Justification for Hire">
+            <Textarea placeholder="Why is this position needed now? What gap does it fill?" value="" onChange={() => {}} rows={3} />
+          </Field>
+          <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+            <Btn color={T.teal} onClick={() => {}}>Submit for ED Approval</Btn>
+            <Btn outline color={T.gray} onClick={() => {}}>Save Draft</Btn>
+          </div>
+        </Card>
+      )}
+
+      {tab === "aiscreen" && (
+        <Card>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.navy, marginBottom: 4 }}>AI Round 1 Screener</div>
+          <div style={{ fontSize: 12, color: T.gray, marginBottom: 14 }}>Paste the applicant's written responses from the pre-screen form. AI reviews for child-safe suitability, quotes specific language, and flags concerns.</div>
+          <Alert type="danger">AI output is advisory only. Jackson must review before any decision. No applicant is advanced or rejected based on AI alone.</Alert>
+          <Field label="Role Being Screened">
+            <Select value={selectedRole} onChange={e => setSelectedRole(e.target.value)}>
+              {Object.entries(ROLE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </Select>
+          </Field>
+          <Field label="Applicant's Written Responses">
+            <Textarea value={applicantText} onChange={e => setApplicantText(e.target.value)} placeholder="Paste the applicant's answers from the pre-screen form here — cover letter, motivation, boundary question, disclosure response, etc." rows={7} />
+          </Field>
+          <Btn color={T.teal} onClick={runScreen} disabled={aiLoading || !applicantText.trim()}>
+            {aiLoading ? "⏳ Screening..." : "🤖 Run AI Child-Safe Screen"}
+          </Btn>
+          {aiResult && (
+            <div style={{ marginTop: 16, background: T.navy + "05", border: `1px solid ${T.navy}20`, borderRadius: 10, padding: 16 }}>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: T.navy }}>AI SCREENING RESULT</div>
+                <Badge label="Advisory — Jackson Must Review" color={T.amber} />
+              </div>
+              <pre style={{ margin: 0, fontSize: 13, color: T.dark, whiteSpace: "pre-wrap", fontFamily: "inherit", lineHeight: 1.8 }}>{aiResult}</pre>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {tab === "checklist" && (
+        <Card>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.navy, marginBottom: 4 }}>Pre-Employment Requirements Checklist</div>
+          <Alert type="danger">Child-contact staff cannot begin work until NBI Clearance is physically verified and Child Protection Policy is signed. These are DSWD AO 16 s.2004 hard requirements.</Alert>
+          {[
+            { section: "🔴 Hard Requirements (No Contract Without These)", items: [
+              { label: "NBI Clearance — original + copy, current", dswd: true },
+              { label: "Barangay Clearance — current", dswd: true },
+              { label: "Medical Certificate / Fit-to-Work", dswd: true },
+              { label: "Reference Check 1 — documented call with notes", dswd: true },
+              { label: "Reference Check 2 — documented call with notes", dswd: true },
+            ]},
+            { section: "🟡 Must Submit Before Day 1", items: [
+              { label: "Diploma / Transcript / PRC License (as applicable)" },
+              { label: "SSS ID / Number" },
+              { label: "PhilHealth ID / Number" },
+              { label: "Pag-IBIG (HDMF) ID / Number" },
+              { label: "BIR TIN / TIN Card" },
+              { label: "Bank account details for Sprouts PH payroll" },
+              { label: "Valid government-issued ID (copy)" },
+            ]},
+            { section: "🟢 Signed on Day 1 (Onboarding)", items: [
+              { label: "Child Protection Policy Acknowledgment" },
+              { label: "Data Privacy Consent (RA 10173)" },
+              { label: "Employee Handbook Acknowledgment" },
+              { label: "Code of Conduct Agreement" },
+              { label: "Safe Spaces Act (RA 11313) Acknowledgment" },
+              { label: "Confidentiality Agreement" },
+              { label: "Drug-Free Workplace Acknowledgment" },
+            ]},
+          ].map(section => (
+            <div key={section.section} style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: T.navy, marginBottom: 10, paddingBottom: 6, borderBottom: `2px solid ${T.grayL}` }}>{section.section}</div>
+              {section.items.map((item, i) => (
+                <div key={i} style={{ display: "flex", gap: 10, alignItems: "center", padding: "8px 12px", marginBottom: 6, background: T.cream, borderRadius: 8, border: `1px solid ${T.grayL}` }}>
+                  <input type="checkbox" style={{ width: 16, height: 16, accentColor: T.teal }} />
+                  <span style={{ fontSize: 13, color: T.dark, flex: 1 }}>{item.label}</span>
+                  {item.dswd && <Badge label="DSWD AO 16" color={T.red} />}
+                </div>
+              ))}
+            </div>
+          ))}
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MODULE: ONBOARDING
+// ═══════════════════════════════════════════════════════════════════
+function Onboarding() {
+  const [step, setStep] = useState(0);
+  const [role, setRole] = useState("houseparent");
+  const [day1, setDay1] = useState({});
+
+  const D1_ITEMS = [
+    { id:"handbook", label:"Employee Handbook", critical: false },
+    { id:"moo", label:"Manual of Operations (key sections)", critical: false },
+    { id:"cpp", label:"Child Protection Policy + quiz", critical: true },
+    { id:"safe", label:"Safe Spaces Act (RA 11313)", critical: false },
+    { id:"privacy", label:"Data Privacy Consent (RA 10173)", critical: true },
+    { id:"coc", label:"Code of Conduct Agreement", critical: false },
+    { id:"conf", label:"Confidentiality Agreement", critical: true },
+    { id:"drug", label:"Drug-Free Workplace", critical: false },
+    { id:"outside", label:"Outside Employment Declaration", critical: false },
+    { id:"internet", label:"Internet & Electronics Policy", critical: false },
+  ];
+
+  const cppUnsigned = !day1["cpp"];
+  const done = Object.values(day1).filter(Boolean).length;
+
+  return (
+    <div>
+      <SectionTitle icon="📋" title="Onboarding" subtitle="New hire checklist — from contract signing to first week complete" color={T.gold} />
+      <ComplianceTags tags={[{ label:"DOLE Art. 296" }, { label:"DSWD AO 16" }, { label:"MOO Onboarding" }, { label:"RA 10173" }]} />
+
+      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+        {["Contract Setup","Day 1 Orientation","Week 1 Training","Sprouts PH Setup","Probation Schedule"].map((s, i) => (
+          <button key={i} onClick={() => setStep(i)} style={{ padding: "7px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: step === i ? 700 : 500, fontSize: 12, background: step === i ? T.gold : T.grayL, color: step === i ? T.white : T.dark }}>{s}</button>
+        ))}
+      </div>
+
+      {step === 0 && (
+        <Card>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.navy, marginBottom: 14 }}>6-Month Probationary Contract Setup</div>
+          <Alert type="danger">DOLE Article 296: Standards for regularization must be communicated in writing at time of engagement. The contract cannot be generated without these standards populated. ED must sign before delivery.</Alert>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            {[
+              { label:"Employee Full Legal Name", placeholder:"As on government ID" },
+              { label:"Position", placeholder:"Exact title per MOO" },
+              { label:"Start Date", type:"date", placeholder:"" },
+              { label:"Monthly Basic Salary (PHP)", placeholder:"Must match approved band" },
+              { label:"Supervisor", placeholder:"Immediate supervisor position" },
+              { label:"Work Schedule", placeholder:"e.g. 6-day week, rotating shift" },
+            ].map(f => <Field key={f.label} label={f.label}><Input type={f.type||"text"} placeholder={f.placeholder} value="" onChange={()=>{}} /></Field>)}
+          </div>
+          <Field label="Standards for Regularization (Required by DOLE Art. 296)" required>
+            <Textarea placeholder="State specific, measurable performance standards that must be met for regularization. These must be explicit — vague standards create legal risk." value="" onChange={() => {}} rows={4} />
+          </Field>
+          <div style={{ background: T.cream, borderRadius: 8, padding: 12, fontSize: 12, color: T.dark, marginBottom: 14, lineHeight: 1.7 }}>
+            <strong>Auto-calculated dates:</strong> Day 30 evaluation, Day 60 evaluation, Day 90 evaluation, Day 150 (Month 5 decision alert), Day 180 (legal deadline)
+          </div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <Btn color={T.gold} onClick={() => {}}>Generate Contract for ED Review</Btn>
+            <Btn outline color={T.gray} onClick={() => {}}>Save Draft</Btn>
+          </div>
+        </Card>
+      )}
+
+      {step === 1 && (
+        <Card>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: T.navy }}>Day 1 Policy Acknowledgments</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: done === D1_ITEMS.length ? T.green : T.amber }}>{done}/{D1_ITEMS.length} Complete</div>
+          </div>
+          {cppUnsigned && <Alert type="danger"><strong>Child Protection Policy not yet signed.</strong> Employee cannot be assigned to child-contact duties until this is completed.</Alert>}
+          <div style={{ height: 8, background: T.grayL, borderRadius: 4, marginBottom: 16, overflow: "hidden" }}>
+            <div style={{ height: "100%", background: done === D1_ITEMS.length ? T.green : T.teal, borderRadius: 4, width: `${(done / D1_ITEMS.length) * 100}%`, transition: "width 0.3s" }} />
+          </div>
+          {D1_ITEMS.map(item => (
+            <div key={item.id} onClick={() => setDay1(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
+              style={{ display: "flex", gap: 10, alignItems: "center", padding: "10px 12px", marginBottom: 6, background: day1[item.id] ? T.greenL : item.critical ? T.redL : T.cream, borderRadius: 8, border: `1px solid ${day1[item.id] ? T.green : item.critical && !day1[item.id] ? T.red : T.grayL}`, cursor: "pointer" }}>
+              <div style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${day1[item.id] ? T.green : item.critical ? T.red : T.grayL}`, background: day1[item.id] ? T.green : "transparent", display: "flex", alignItems: "center", justifyContent: "center", color: T.white, fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{day1[item.id] ? "✓" : ""}</div>
+              <span style={{ fontSize: 13, fontWeight: item.critical ? 700 : 400, color: T.dark, flex: 1 }}>{item.label}</span>
+              {item.critical && <Badge label="Critical" color={T.red} />}
+            </div>
+          ))}
+        </Card>
+      )}
+
+      {step === 2 && (
+        <Card>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.navy, marginBottom: 14 }}>Week 1 Training Assignments</div>
+          <Alert type="danger">Child Protection Training must be completed before any child-contact duties. This is a DSWD hard requirement. Daily escalation to supervisor and ED if not done by Day 3.</Alert>
+          {[
+            { training: "Child Protection Training", deadline: "Day 3", critical: true, basis: "DSWD AO 16; MOO" },
+            { training: "Positive Discipline", deadline: "Day 5", basis: "MOO; DSWD residential standards" },
+            { training: "Incident Reporting Procedures", deadline: "Day 5", basis: "MOO safeguarding" },
+            { training: "CODI / Safe Spaces Orientation (RA 11313)", deadline: "Day 5", basis: "RA 11313; MOO" },
+            { training: "Data Privacy (practical, RA 10173)", deadline: "Day 5", basis: "RA 10173; NPC; MOO" },
+            { training: "Role-Specific Training", deadline: "Day 5", basis: "MOO; DSWD HR competency" },
+            { training: "DRRM / OSH Safety (RA 11058)", deadline: "Day 30", basis: "RA 11058; DOLE" },
+          ].map((t, i) => (
+            <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", marginBottom: 6, background: T.cream, borderRadius: 8, border: `1px solid ${t.critical ? T.red + "44" : T.grayL}` }}>
+              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                <input type="checkbox" style={{ width: 16, height: 16, accentColor: T.teal }} />
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: t.critical ? 700 : 400, color: T.dark }}>{t.training}</div>
+                  <div style={{ fontSize: 11, color: T.gray }}>{t.basis}</div>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
+                <Badge label={`Due: ${t.deadline}`} color={t.critical ? T.red : T.teal} />
+                {t.critical && <Badge label="HARD BLOCK" color={T.red} />}
+              </div>
+            </div>
+          ))}
+        </Card>
+      )}
+
+      {step === 3 && (
+        <Card>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.navy, marginBottom: 14 }}>Sprouts PH Setup Checklist</div>
+          <Alert type="info">Complete Sprouts setup before or on Day 1. Data in Sprouts must match the signed employment contract exactly. Run a mismatch check every week.</Alert>
+          {["Legal name (match government ID exactly)", "Position and department", "Immediate supervisor assigned", "Start date and employment status (Probationary)", "Work schedule / shift assigned", "Leave profile configured (SIL per years-of-service table)", "Payroll bank details entered", "SSS / PhilHealth / Pag-IBIG / BIR numbers encoded", "Digital 201 folder created in Google Drive", "Emergency contact recorded", "Timekeeping access granted", "Employee informed of Sprouts login and how to use it"].map((item, i) => (
+            <div key={i} style={{ display: "flex", gap: 10, alignItems: "center", padding: "8px 12px", marginBottom: 6, background: T.cream, borderRadius: 8, border: `1px solid ${T.grayL}` }}>
+              <input type="checkbox" style={{ width: 16, height: 16, accentColor: T.teal }} />
+              <span style={{ fontSize: 13, color: T.dark }}>{item}</span>
+            </div>
+          ))}
+        </Card>
+      )}
+
+      {step === 4 && (
+        <Card>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.navy, marginBottom: 14 }}>Probationary Review Schedule</div>
+          <Alert type="danger">DOLE Article 296: The Month 5 decision must be delivered before Day 180. Failure = automatic regularization by operation of law.</Alert>
+          {[
+            { milestone: "Day 30 Evaluation", dole: "MOO + DOLE", desc: "Early adjustment, attendance, attitude, initial competency. Form sent to supervisor on Day 16.", trigger: "Day 16 → supervisor", deadline: "Day 30", color: T.teal },
+            { milestone: "Day 60 Evaluation", dole: "MOO + DOLE", desc: "Role competency, training progress, child-safety conduct, documentation quality.", trigger: "Day 46 → supervisor", deadline: "Day 60", color: T.teal },
+            { milestone: "Day 90 Evaluation", dole: "MOO + DOLE", desc: "Performance vs. standards, mid-point gap check, non-regularization risk flag if concerns exist.", trigger: "Day 76 → supervisor", deadline: "Day 90", color: T.navy },
+            { milestone: "Month 5 Decision", dole: "DOLE Art. 296 CRITICAL", desc: "Final regularization or non-regularization decision. Legal review required for non-regularization. ED signs.", trigger: "Day 135 → Jackson + ED", deadline: "Before Day 180 — ABSOLUTE", color: T.red },
+          ].map((m, i) => (
+            <div key={i} style={{ background: T.white, borderRadius: 10, border: `1px solid ${m.color}44`, padding: 14, marginBottom: 10, borderLeft: `4px solid ${m.color}` }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: T.navy }}>{m.milestone}</div>
+                <Badge label={m.dole} color={m.color} />
+              </div>
+              <div style={{ fontSize: 12, color: T.gray, marginBottom: 6, lineHeight: 1.6 }}>{m.desc}</div>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <Badge label={`Auto-trigger: ${m.trigger}`} color={T.teal} />
+                <Badge label={`Deadline: ${m.deadline}`} color={m.color} />
+              </div>
+            </div>
+          ))}
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MODULE: EMPLOYEE RECORDS
+// ═══════════════════════════════════════════════════════════════════
+function EmployeeRecords() {
+  const employees = [
+    { name:"Maria Santos", role:"House Parent L1", status:"Probationary", hired:"2026-01-15", day:"Day 163 ⚠️", docs:7, missing:2 },
+    { name:"Juan dela Cruz", role:"Social Worker", status:"Regular", hired:"2024-06-01", day:"Regular", docs:10, missing:0 },
+    { name:"Ana Reyes", role:"House Parent L2", status:"Regular", hired:"2023-03-10", day:"Regular", docs:10, missing:1 },
+    { name:"Pedro Lim", role:"Cook", status:"Probationary", hired:"2026-04-01", day:"Day 86", docs:8, missing:1 },
+    { name:"Rosa Garcia", role:"Teacher", status:"Regular", hired:"2022-08-15", day:"Regular", docs:10, missing:0 },
+  ];
+
+  return (
+    <div>
+      <SectionTitle icon="👥" title="Employee Records" subtitle="201 file index, employment status, and compliance gaps" color={T.navy} />
+      <ComplianceTags tags={[{ label:"DSWD 201 File" }, { label:"DOLE Records" }, { label:"RA 10173" }, { label:"Google Drive" }]} />
+
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16 }}>
+        <Card>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: T.navy }}>Employee Master List</div>
+            <Btn color={T.navy} onClick={() => {}}>+ Add Employee</Btn>
+          </div>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+            <thead>
+              <tr style={{ background: T.navy }}>
+                {["Name","Role","Status","Hired","Tenure","201 Docs","Action"].map(h => (
+                  <th key={h} style={{ padding: "8px 10px", color: T.white, textAlign: "left", fontWeight: 700, fontSize: 11 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {employees.map((e, i) => (
+                <tr key={i} style={{ background: i % 2 === 0 ? T.cream : T.white, borderBottom: `1px solid ${T.grayL}` }}>
+                  <td style={{ padding: "9px 10px", fontWeight: 600, color: T.navy }}>{e.name}</td>
+                  <td style={{ padding: "9px 10px", color: T.dark }}>{e.role}</td>
+                  <td style={{ padding: "9px 10px" }}><Badge label={e.status} color={e.status === "Regular" ? T.green : T.amber} /></td>
+                  <td style={{ padding: "9px 10px", color: T.gray }}>{e.hired}</td>
+                  <td style={{ padding: "9px 10px", color: e.day.includes("⚠️") ? T.red : T.dark, fontWeight: e.day.includes("⚠️") ? 700 : 400 }}>{e.day}</td>
+                  <td style={{ padding: "9px 10px" }}>
+                    <span style={{ color: e.missing > 0 ? T.red : T.green, fontWeight: 700 }}>{e.docs}/10</span>
+                    {e.missing > 0 && <span style={{ fontSize: 10, color: T.red, marginLeft: 4 }}>({e.missing} missing)</span>}
+                  </td>
+                  <td style={{ padding: "9px 10px", display: "flex", gap: 4 }}>
+                    <Btn size="sm" onClick={() => {}}>View</Btn>
+                    <Btn size="sm" outline color={T.teal} onClick={() => {}}>📁 Drive</Btn>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+
+        <div>
+          <Card>
+            <div style={{ fontSize: 13, fontWeight: 700, color: T.navy, marginBottom: 12 }}>📁 201 File Tabs</div>
+            <div style={{ fontSize: 11, color: T.gray, marginBottom: 12, lineHeight: 1.6 }}>Each employee has a Google Drive folder with 10 subfolders. Click to open the template structure.</div>
+            {["Tab 1 — Identity", "Tab 2 — Employment", "Tab 3 — Screening/Clearances", "Tab 4 — Education/Credentials", "Tab 5 — Government IDs", "Tab 6 — Acknowledgments", "Tab 7 — Training Records", "Tab 8 — Evaluations", "Tab 9 — Disciplinary (Restricted)", "Tab 10 — Exit/Offboarding"].map((tab, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: i < 9 ? `1px dashed ${T.grayL}` : "none", fontSize: 12, color: T.dark }}>
+                <span>{tab}</span>
+                <span style={{ fontSize: 10, color: T.teal, cursor: "pointer" }}>📁 Open</span>
+              </div>
+            ))}
+            <div style={{ marginTop: 12 }}>
+              <Alert type="info">Set up Google Drive folders per the setup guide in Settings. Link each employee's folder here after creation.</Alert>
+            </div>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MODULE: PERFORMANCE
+// ═══════════════════════════════════════════════════════════════════
+function Performance() {
+  const [activeTab, setActiveTab] = useState("probation");
+  const [pipFields, setPipFields] = useState({ employee:"", concern:"", target:"", support:"", timeline:"", consequence:"" });
+
+  return (
+    <div>
+      <SectionTitle icon="📈" title="Performance & Reviews" subtitle="Probationary evaluations · Quarterly & annual reviews · PIPs · Regularization" color={T.teal} />
+      <ComplianceTags tags={[{ label:"DOLE Art. 296" }, { label:"MOO Appendix 11" }, { label:"DSWD HR Standards" }]} />
+
+      <div style={{ display: "flex", gap: 6, marginBottom: 20, flexWrap: "wrap" }}>
+        {[["probation","📊 Probationary"],["quarterly","📅 Quarterly"],["annual","🎯 Annual"],["pip","📋 Improvement Plan"],["regularize","⭐ Regularization"]].map(([id,label]) => (
+          <button key={id} onClick={() => setActiveTab(id)} style={{ padding:"7px 14px",borderRadius:8,border:"none",cursor:"pointer",fontWeight:activeTab===id?700:500,fontSize:12,background:activeTab===id?T.teal:T.grayL,color:activeTab===id?T.white:T.dark }}>{label}</button>
+        ))}
+      </div>
+
+      {activeTab === "probation" && (
+        <div>
+          <Alert type="danger">Month 5 decision must be delivered before Day 180. Missing this = automatic regularization by Philippine law. Jackson and ED are alerted starting Day 135.</Alert>
+          {[
+            { label:"Day 30 — Maria Santos (House Parent L1)", due:"Jun 28, 2026", status:"overdue", supervisor:"House Parent Supervisor" },
+            { label:"Day 60 — Pedro Lim (Cook)", due:"Jul 15, 2026", status:"upcoming", supervisor:"Admin Supervisor" },
+            { label:"Month 5 — Maria Santos (House Parent L1)", due:"Jul 27, 2026", status:"critical", supervisor:"Jackson + ED" },
+          ].map((e, i) => (
+            <Card key={i} style={{ borderLeft: `4px solid ${e.status === "overdue" ? T.red : e.status === "critical" ? T.red : T.amber}` }}>
+              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start" }}>
+                <div>
+                  <div style={{ fontSize:14,fontWeight:700,color:T.navy,marginBottom:4 }}>{e.label}</div>
+                  <div style={{ fontSize:12,color:T.gray }}>Supervisor: {e.supervisor} · Due: {e.due}</div>
+                </div>
+                <div style={{ display:"flex",gap:8 }}>
+                  <Badge label={e.status === "overdue" ? "OVERDUE" : e.status === "critical" ? "CRITICAL" : "Upcoming"} color={e.status === "upcoming" ? T.amber : T.red} />
+                  <Btn size="sm" color={T.teal} onClick={() => {}}>Open Form →</Btn>
+                </div>
+              </div>
+            </Card>
+          ))}
+
+          <Card>
+            <div style={{ fontSize:13,fontWeight:700,color:T.navy,marginBottom:14 }}>Evaluation Form — Day 30/60/90</div>
+            {[
+              { area:"Attendance & Punctuality", weight:"20%", desc:"Has employee reported on time, every shift?" },
+              { area:"Job Performance vs. Standards", weight:"30%", desc:"Is employee meeting the regularization standards stated in their contract?" },
+              { area:"Child Safety & Safeguarding Conduct", weight:"25%", desc:"Zero boundary concerns, proper reporting, policy compliance." },
+              { area:"Training Progress", weight:"15%", desc:"Mandatory trainings completed? Certificates filed?" },
+              { area:"Teamwork & Communication", weight:"10%", desc:"Working well with supervisor and colleagues?" },
+            ].map((area, i) => (
+              <div key={i} style={{ display:"flex",justifyContent:"space-between",gap:12,padding:"10px 0",borderBottom:i<4?`1px dashed ${T.grayL}`:"none" }}>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:13,fontWeight:600,color:T.dark }}>{area.area} <span style={{ color:T.teal,fontSize:11 }}>({area.weight})</span></div>
+                  <div style={{ fontSize:11,color:T.gray,marginTop:2 }}>{area.desc}</div>
+                </div>
+                <Select value="" onChange={()=>{}}>
+                  <option value="">Score</option>
+                  {["5 — Excellent","4 — Good","3 — Adequate","2 — Needs Improvement","1 — Unsatisfactory"].map(o => <option key={o}>{o}</option>)}
+                </Select>
+              </div>
+            ))}
+            <Field label="Supervisor Observations (specific examples, not general impressions)" style={{ marginTop:14 }}>
+              <Textarea placeholder="Describe specific observed behaviors, incidents, and evidence. Quote examples where possible." value="" onChange={()=>{}} rows={4} />
+            </Field>
+            <Field label="Supervisor Recommendation">
+              <Select value="" onChange={()=>{}}>
+                <option>On track — continue probation</option>
+                <option>Coaching plan issued — attach to this form</option>
+                <option>Non-regularization risk — notify ED immediately</option>
+              </Select>
+            </Field>
+            <Btn color={T.teal} onClick={()=>{}}>Submit Evaluation → HR Review</Btn>
+          </Card>
+        </div>
+      )}
+
+      {activeTab === "quarterly" && (
+        <Card>
+          <div style={{ fontSize:13,fontWeight:700,color:T.navy,marginBottom:4 }}>Quarterly Review — Regular Employees</div>
+          <div style={{ fontSize:12,color:T.gray,marginBottom:14 }}>Reviews are anchored to each employee's regularization date — not the calendar year. Supervisor receives form 30 days before each quarter.</div>
+          <Alert type="info">Q1 = 3 months from regularization · Q2 = 6 months · Q3 = 9 months · Q4/Annual = 12 months (anniversary)</Alert>
+          {[
+            { employee:"Juan dela Cruz", role:"Social Worker", quarter:"Q3", due:"Sep 1, 2026" },
+            { employee:"Ana Reyes", role:"House Parent L2", quarter:"Q4 / Annual", due:"Sep 10, 2026" },
+            { employee:"Rosa Garcia", role:"Teacher", quarter:"Q2", due:"Aug 15, 2026" },
+          ].map((r, i) => (
+            <div key={i} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",marginBottom:8,background:T.cream,borderRadius:8,border:`1px solid ${T.grayL}` }}>
+              <div>
+                <div style={{ fontSize:13,fontWeight:600,color:T.navy }}>{r.employee} — {r.role}</div>
+                <div style={{ fontSize:11,color:T.gray }}>{r.quarter} Review · Due: {r.due}</div>
+              </div>
+              <Btn size="sm" color={T.teal} onClick={()=>{}}>Open Form →</Btn>
+            </div>
+          ))}
+        </Card>
+      )}
+
+      {activeTab === "annual" && (
+        <Card>
+          <div style={{ fontSize:13,fontWeight:700,color:T.navy,marginBottom:4 }}>Annual Review & Anniversary</div>
+          <Alert type="success">Annual reviews trigger: loyalty award calculation, anniversary letter generation, promotion eligibility check, and SIL balance reset.</Alert>
+          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12 }}>
+            {[
+              { employee:"Ana Reyes", anniversary:"Mar 10, 2026", years:3, award:"PHP 1,500" },
+              { employee:"Rosa Garcia", anniversary:"Aug 15, 2026", years:4, award:"PHP 2,000" },
+            ].map((r, i) => (
+              <div key={i} style={{ background:T.cream,borderRadius:10,padding:16,border:`1px solid ${T.gold}44` }}>
+                <div style={{ fontSize:14,fontWeight:700,color:T.navy,marginBottom:4 }}>{r.employee}</div>
+                <div style={{ fontSize:12,color:T.gray,marginBottom:8 }}>Anniversary: {r.anniversary} · Year {r.years}</div>
+                <div style={{ display:"flex",gap:8,flexWrap:"wrap" }}>
+                  <Badge label={`Loyalty: ${r.award}`} color={T.gold} />
+                </div>
+                <div style={{ display:"flex",gap:8,marginTop:10 }}>
+                  <Btn size="sm" color={T.gold} onClick={()=>{}}>Generate Anniversary Letter</Btn>
+                  <Btn size="sm" outline color={T.teal} onClick={()=>{}}>Open Review Form</Btn>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {activeTab === "pip" && (
+        <Card>
+          <div style={{ fontSize:13,fontWeight:700,color:T.navy,marginBottom:4 }}>Personal Improvement Plan (PIP)</div>
+          <Alert type="warning">A PIP is a coaching and support tool — not a disciplinary action. It must be fair, specific, and achievable. A PIP issued without genuine support is a labor risk. Escalate to ED before issuing.</Alert>
+          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12 }}>
+            {[
+              { label:"Employee Name", key:"employee" },
+              { label:"Specific Performance Concern (be factual, not general)", key:"concern" },
+              { label:"Target Improvement (specific and measurable)", key:"target" },
+              { label:"Support Provided by Safe Haven", key:"support" },
+              { label:"Timeline for Improvement", key:"timeline" },
+              { label:"Consequence if Not Achieved (must follow DOLE due process)", key:"consequence" },
+            ].map(f => (
+              <Field key={f.key} label={f.label} required>
+                <Textarea value={pipFields[f.key]} onChange={e => setPipFields(prev => ({ ...prev, [f.key]: e.target.value }))} rows={2} placeholder="" />
+              </Field>
+            ))}
+          </div>
+          <div style={{ display:"flex",gap:10,marginTop:8 }}>
+            <Btn color={T.teal} onClick={()=>{}}>Generate PIP Document for ED Review</Btn>
+            <Btn outline color={T.gray} onClick={()=>{}}>Save Draft</Btn>
+          </div>
+        </Card>
+      )}
+
+      {activeTab === "regularize" && (
+        <Card>
+          <div style={{ fontSize:13,fontWeight:700,color:T.navy,marginBottom:14 }}>Regularization Package Generator</div>
+          <Alert type="danger">Legal review is required before any non-regularization notice is generated. The ED must sign all notices. Delivery must occur before Day 180 from date of engagement.</Alert>
+          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:16 }}>
+            <div style={{ background:T.greenL,borderRadius:10,border:`1px solid ${T.green}33`,padding:16 }}>
+              <div style={{ fontSize:13,fontWeight:700,color:T.green,marginBottom:10 }}>✅ Regularization Path</div>
+              {["All 3 evaluations complete and on file","Overall satisfactory or above rating","No unresolved disciplinary actions","All mandatory trainings completed","No child protection concerns","Supervisor written recommendation","ED approval","New employment contract or regularization notice","Sprouts status updated to Regular","201 file updated"].map((item, i) => (
+                <div key={i} style={{ display:"flex",gap:6,fontSize:12,color:T.dark,padding:"4px 0",borderBottom:i<9?`1px dashed ${T.grayL}`:"none" }}>
+                  <span style={{ color:T.green }}>✓</span>{item}
+                </div>
+              ))}
+              <Btn color={T.green} onClick={()=>{}} style={{ marginTop:14,width:"100%" }}>Generate Regularization Notice</Btn>
+            </div>
+            <div style={{ background:T.redL,borderRadius:10,border:`1px solid ${T.red}33`,padding:16 }}>
+              <div style={{ fontSize:13,fontWeight:700,color:T.red,marginBottom:10 }}>❌ Non-Regularization Path</div>
+              <Alert type="danger">HR/Legal review REQUIRED. Verify DOLE-compliant grounds before generating.</Alert>
+              {["DOLE-compliant ground: failure to meet stated standards","Written notice before Day 180","Evidence of performance issues documented","All evaluations on file","ED signature","Employee receives written notice","Final pay triggered","Exit clearance initiated","COE issued upon request"].map((item, i) => (
+                <div key={i} style={{ display:"flex",gap:6,fontSize:12,color:T.dark,padding:"4px 0",borderBottom:i<8?`1px dashed ${T.grayL}`:"none" }}>
+                  <span style={{ color:T.red }}>!</span>{item}
+                </div>
+              ))}
+              <Btn color={T.red} onClick={()=>{}} style={{ marginTop:14,width:"100%" }}>Generate Non-Regularization Notice</Btn>
+            </div>
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MODULE: TRAINING
+// ═══════════════════════════════════════════════════════════════════
+function Training() {
+  return (
+    <div>
+      <SectionTitle icon="🎓" title="Training & Compliance" subtitle="Mandatory training matrix, completion tracking, DSWD evidence" color={T.teal} />
+      <ComplianceTags tags={[{ label:"DSWD AO 16 s.2004" }, { label:"MOO Section VIII" }, { label:"RA 10173" }, { label:"RA 11313" }, { label:"RA 11058" }]} />
+
+      <div style={{ display:"grid",gridTemplateColumns:"2fr 1fr",gap:16 }}>
+        <Card>
+          <div style={{ fontSize:13,fontWeight:700,color:T.navy,marginBottom:14 }}>Staff Training Compliance Matrix</div>
+          <div style={{ overflowX:"auto" }}>
+            <table style={{ width:"100%",borderCollapse:"collapse",fontSize:11 }}>
+              <thead>
+                <tr style={{ background:T.navy }}>
+                  <th style={{ padding:"8px 10px",color:T.white,textAlign:"left",fontSize:11,fontWeight:700,minWidth:140 }}>Staff Member</th>
+                  {["CPP","DP","SS","PD","DRRM","IR","Drug"].map(h => (
+                    <th key={h} style={{ padding:"8px 8px",color:T.white,textAlign:"center",fontSize:10,fontWeight:700 }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { name:"Maria Santos", scores:[true,true,false,true,false,true,true] },
+                  { name:"Juan dela Cruz", scores:[true,true,true,true,true,true,true] },
+                  { name:"Ana Reyes", scores:[true,true,true,true,false,true,true] },
+                  { name:"Pedro Lim", scores:[true,false,true,true,false,false,true] },
+                  { name:"Rosa Garcia", scores:[true,true,true,true,true,true,true] },
+                ].map((row, i) => (
+                  <tr key={i} style={{ background:i%2===0?T.cream:T.white,borderBottom:`1px solid ${T.grayL}` }}>
+                    <td style={{ padding:"8px 10px",fontWeight:600,color:T.navy }}>{row.name}</td>
+                    {row.scores.map((done, j) => (
+                      <td key={j} style={{ padding:"8px",textAlign:"center" }}>
+                        <span style={{ color:done?T.green:T.red,fontWeight:700,fontSize:14 }}>{done?"✓":"✗"}</span>
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ display:"flex",gap:12,marginTop:12,fontSize:11,color:T.gray }}>
+            {[["CPP","Child Protection"],["DP","Data Privacy"],["SS","Safe Spaces"],["PD","Positive Discipline"],["DRRM","DRRM/OSH"],["IR","Incident Reporting"],["Drug","Drug-Free"]].map(([code,full]) => (
+              <span key={code}><strong style={{ color:T.navy }}>{code}</strong> = {full}</span>
+            ))}
+          </div>
+        </Card>
+
+        <div>
+          <Card>
+            <div style={{ fontSize:13,fontWeight:700,color:T.navy,marginBottom:10 }}>Compliance Gaps</div>
+            {[
+              { name:"Maria Santos", missing:"Safe Spaces, DRRM/OSH", risk:"high" },
+              { name:"Pedro Lim", missing:"Data Privacy, DRRM/OSH, Incident Reporting", risk:"high" },
+              { name:"Ana Reyes", missing:"DRRM/OSH", risk:"medium" },
+            ].map((g, i) => (
+              <div key={i} style={{ padding:"10px 12px",marginBottom:8,background:g.risk==="high"?T.redL:T.amberL,borderRadius:8,border:`1px solid ${g.risk==="high"?T.red:T.amber}33` }}>
+                <div style={{ fontSize:12,fontWeight:700,color:T.dark }}>{g.name}</div>
+                <div style={{ fontSize:11,color:T.gray,marginTop:2 }}>Missing: {g.missing}</div>
+                <Badge label={g.risk === "high" ? "High Risk" : "Medium"} color={g.risk==="high"?T.red:T.amber} />
+              </div>
+            ))}
+          </Card>
+
+          <Card>
+            <div style={{ fontSize:13,fontWeight:700,color:T.navy,marginBottom:10 }}>Log Training Completion</div>
+            <Field label="Employee">
+              <Select value="" onChange={()=>{}}><option>Select employee...</option></Select>
+            </Field>
+            <Field label="Training Module">
+              <Select value="" onChange={()=>{}}>
+                <option>Child Protection Policy</option>
+                <option>Data Privacy (RA 10173)</option>
+                <option>Safe Spaces (RA 11313)</option>
+                <option>Positive Discipline</option>
+                <option>DRRM / OSH (RA 11058)</option>
+                <option>Incident Reporting</option>
+                <option>Drug-Free Workplace</option>
+                <option>Role-Specific Training</option>
+              </Select>
+            </Field>
+            <Field label="Completion Date"><Input type="date" value="" onChange={()=>{}} /></Field>
+            <Field label="Certificate / Evidence Reference"><Input placeholder="Google Drive link or file reference" value="" onChange={()=>{}} /></Field>
+            <Btn color={T.teal} onClick={()=>{}}>Log Completion → 201 File</Btn>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MODULE: DISCIPLINE
+// ═══════════════════════════════════════════════════════════════════
+function Discipline() {
+  const [step, setStep] = useState(0);
+
+  return (
+    <div>
+      <SectionTitle icon="⚖️" title="Discipline & Due Process" subtitle="Incident report → NTE → hearing → decision — DOLE-compliant workflow" color={T.red} />
+      <ComplianceTags tags={[{ label:"DOLE Due Process" }, { label:"MOO Table of Offenses" }, { label:"RA 7610" }, { label:"Safe Haven CPP" }]} />
+
+      <Alert type="danger">Discipline involving child safety, abuse, neglect, or safeguarding violations is not subject to progressive discipline. Immediate protective action and ED escalation required. Legal review before any suspension or dismissal.</Alert>
+
+      <div style={{ display:"flex",gap:6,marginBottom:20,flexWrap:"wrap" }}>
+        {["📝 Incident Report","📨 Notice to Explain","👂 Conference","📋 Decision Notice","📊 Discipline Log"].map((s, i) => (
+          <button key={i} onClick={()=>setStep(i)} style={{ padding:"7px 14px",borderRadius:8,border:"none",cursor:"pointer",fontWeight:step===i?700:500,fontSize:12,background:step===i?T.red:T.grayL,color:step===i?T.white:T.dark }}>{s}</button>
+        ))}
+      </div>
+
+      {step === 0 && (
+        <Card>
+          <div style={{ fontSize:13,fontWeight:700,color:T.navy,marginBottom:4 }}>Incident Report</div>
+          <div style={{ fontSize:12,color:T.gray,marginBottom:14 }}>Document factually. Do not editorialize. Do not presume guilt. This report triggers due process — it is not a finding of guilt.</div>
+          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12 }}>
+            <Field label="Employee Involved"><Input placeholder="Full name" value="" onChange={()=>{}} /></Field>
+            <Field label="Date of Incident"><Input type="date" value="" onChange={()=>{}} /></Field>
+            <Field label="Incident Type">
+              <Select value="" onChange={()=>{}}>
+                <option>WC-01 — Habitual Tardiness</option>
+                <option>WC-02 — AWOL</option>
+                <option>WC-03 — Insubordination</option>
+                <option>CP-01 — Verbal Abuse (Child)</option>
+                <option>CP-02 — Unsupervised Child</option>
+                <option>CP-03 — Emotional Manipulation</option>
+                <option>CP-05 — Physical Force (Grave)</option>
+                <option>HS-02 — Under Influence</option>
+                <option>PR-03 — Theft / Misuse (Grave)</option>
+                <option>Other — Describe below</option>
+              </Select>
+            </Field>
+            <Field label="Reported By"><Input placeholder="Name and position" value="" onChange={()=>{}} /></Field>
+          </div>
+          <Field label="Incident Description (factual, specific, timestamped where possible)" required>
+            <Textarea placeholder="Describe exactly what happened, who was present, what was said or done, and what evidence exists. Use specific times and direct quotes where possible." value="" onChange={()=>{}} rows={5} />
+          </Field>
+          <Field label="Immediate Action Taken">
+            <Textarea placeholder="What was done immediately after the incident? Who was notified? Were any protective measures taken?" value="" onChange={()=>{}} rows={3} />
+          </Field>
+          <Field label="Witnesses">
+            <Input placeholder="Names of any witnesses present" value="" onChange={()=>{}} />
+          </Field>
+          <div style={{ background:T.redL,borderRadius:8,padding:12,marginBottom:14,fontSize:12,color:T.red }}>
+            <strong>Child Safety Override:</strong> If this incident involves any safeguarding concern — boundary violation, physical contact, verbal abuse, unauthorized communication with a child — escalate to the Executive Director and Child Protection Officer IMMEDIATELY, regardless of the offense category.
+          </div>
+          <div style={{ display:"flex",gap:10 }}>
+            <Btn color={T.red} onClick={()=>{}}>File Incident Report → HR</Btn>
+            <Btn outline color={T.gray} onClick={()=>{}}>Save Draft</Btn>
+          </div>
+        </Card>
+      )}
+
+      {step === 1 && (
+        <Card>
+          <div style={{ fontSize:13,fontWeight:700,color:T.navy,marginBottom:4 }}>Notice to Explain (NTE)</div>
+          <Alert type="warning">The employee must receive the NTE in writing and be given at least 5 calendar days to respond. Do not issue a decision before the response period ends. HR legal review before any NTE for suspension-level offenses.</Alert>
+          <Field label="Employee Name"><Input placeholder="Full name" value="" onChange={()=>{}} /></Field>
+          <Field label="Date of NTE"><Input type="date" value="" onChange={()=>{}} /></Field>
+          <Field label="Charge / Alleged Violation">
+            <Textarea placeholder="State the specific offense code and description from the Table of Offenses. Be precise — vague charges create due process risks." value="" onChange={()=>{}} rows={3} />
+          </Field>
+          <Field label="Deadline for Response (minimum 5 calendar days from receipt)">
+            <Input type="date" value="" onChange={()=>{}} />
+          </Field>
+          <div style={{ background:T.cream,borderRadius:8,padding:12,marginBottom:14,fontSize:12,color:T.dark,lineHeight:1.7 }}>
+            <strong>Generated NTE will include:</strong> Employee name, charge, factual basis, reference to Handbook/MOO, instruction to respond in writing, deadline, and contact for submission. <strong>ED must sign before delivery.</strong>
+          </div>
+          <div style={{ display:"flex",gap:10 }}>
+            <Btn color={T.red} onClick={()=>{}}>Generate NTE for ED Signature</Btn>
+            <Btn outline color={T.gray} onClick={()=>{}}>Save Draft</Btn>
+          </div>
+        </Card>
+      )}
+
+      {step === 2 && (
+        <Card>
+          <div style={{ fontSize:13,fontWeight:700,color:T.navy,marginBottom:14 }}>Administrative Conference / Hearing Record</div>
+          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12 }}>
+            <Field label="Date of Conference"><Input type="date" value="" onChange={()=>{}} /></Field>
+            <Field label="Presided By"><Input placeholder="HR and/or authorized officer" value="" onChange={()=>{}} /></Field>
+          </div>
+          <Field label="Employee Response Summary">
+            <Textarea placeholder="Summarize the employee's written and/or verbal response. Note any new evidence or explanation presented." value="" onChange={()=>{}} rows={4} />
+          </Field>
+          <Field label="Findings of the Conference">
+            <Textarea placeholder="What was established during the conference? What evidence was reviewed?" value="" onChange={()=>{}} rows={4} />
+          </Field>
+          <Field label="Recommendation to Executive Director">
+            <Select value="" onChange={()=>{}}>
+              <option>Proceed to formal decision — evidence supports the charge</option>
+              <option>Dismiss the charge — insufficient evidence or mitigating factors</option>
+              <option>Issue coaching or warning — minor offense, first occurrence</option>
+              <option>Escalate to legal counsel before decision</option>
+            </Select>
+          </Field>
+          <Btn color={T.teal} onClick={()=>{}}>File Conference Record → ED Review</Btn>
+        </Card>
+      )}
+
+      {step === 3 && (
+        <Card>
+          <div style={{ fontSize:13,fontWeight:700,color:T.navy,marginBottom:4 }}>Decision Notice Generator</div>
+          <Alert type="danger">Suspension and dismissal notices require ED signature and legal review. Preventive suspension is not a finding of guilt. All decisions must state the specific grounds from the Table of Offenses.</Alert>
+          <Field label="Decision Type">
+            <Select value="" onChange={()=>{}}>
+              <option>Verbal Warning (documented)</option>
+              <option>Written Warning — 1st</option>
+              <option>Written Warning — 2nd (Final)</option>
+              <option>5-Day Preventive Suspension</option>
+              <option>Suspension with Pay</option>
+              <option>Dismissal / Termination — Just Cause</option>
+              <option>Exoneration — Charge Dismissed</option>
+            </Select>
+          </Field>
+          <Field label="Grounds for Decision">
+            <Textarea placeholder="State the specific offense code, evidence relied upon, and why this decision is appropriate per the Table of Offenses and DOLE due process." value="" onChange={()=>{}} rows={4} />
+          </Field>
+          <div style={{ display:"flex",gap:10 }}>
+            <Btn color={T.red} onClick={()=>{}}>Generate Decision Notice for ED</Btn>
+            <Btn outline color={T.gray} onClick={()=>{}}>Save Draft</Btn>
+          </div>
+        </Card>
+      )}
+
+      {step === 4 && (
+        <Card>
+          <div style={{ fontSize:13,fontWeight:700,color:T.navy,marginBottom:14 }}>Discipline Log</div>
+          <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
+            <thead>
+              <tr style={{ background:T.navy }}>
+                {["Employee","Date","Offense","Action","Status","ED Signed"].map(h => (
+                  <th key={h} style={{ padding:"8px 10px",color:T.white,textAlign:"left",fontWeight:700,fontSize:11 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { emp:"Maria Santos", date:"Jun 10", offense:"WC-01 Tardiness", action:"Verbal Warning", status:"Closed", signed:true },
+                { emp:"Pedro Lim", date:"Jun 18", offense:"WC-02 AWOL", action:"NTE Issued", status:"Pending Response", signed:false },
+              ].map((r, i) => (
+                <tr key={i} style={{ background:i%2===0?T.cream:T.white,borderBottom:`1px solid ${T.grayL}` }}>
+                  <td style={{ padding:"8px 10px",fontWeight:600,color:T.navy }}>{r.emp}</td>
+                  <td style={{ padding:"8px 10px",color:T.gray }}>{r.date}</td>
+                  <td style={{ padding:"8px 10px",color:T.dark }}>{r.offense}</td>
+                  <td style={{ padding:"8px 10px" }}><Badge label={r.action} color={T.amber} /></td>
+                  <td style={{ padding:"8px 10px" }}><Badge label={r.status} color={r.status==="Closed"?T.green:T.amber} /></td>
+                  <td style={{ padding:"8px 10px",textAlign:"center" }}>{r.signed?"✅":"⏳"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MODULE: EXIT
+// ═══════════════════════════════════════════════════════════════════
+function Exit() {
+  const [sepType, setSepType] = useState("");
+  const [silDays, setSilDays] = useState(0);
+  const [dailyRate, setDailyRate] = useState(0);
+  const [unpaidDays, setUnpaidDays] = useState(0);
+  const [monthsWorked, setMonthsWorked] = useState(0);
+  const [monthlySalary, setMonthlySalary] = useState(0);
+
+  const thirteenMonth = monthsWorked > 0 && monthlySalary > 0 ? ((monthlySalary * monthsWorked) / 12).toFixed(2) : 0;
+  const silCash = silDays > 0 && dailyRate > 0 ? (silDays * dailyRate).toFixed(2) : 0;
+  const lastSalary = dailyRate > 0 && unpaidDays > 0 ? (dailyRate * unpaidDays).toFixed(2) : 0;
+  const totalFinalPay = (parseFloat(thirteenMonth) + parseFloat(silCash) + parseFloat(lastSalary)).toFixed(2);
+
+  return (
+    <div>
+      <SectionTitle icon="🚪" title="Exit & Offboarding" subtitle="Clearance workflow, final pay, COE — DOLE 30-day final pay rule" color={T.gray} />
+      <ComplianceTags tags={[{ label:"DOLE Final Pay" }, { label:"DOLE Labor Code" }, { label:"MOO Separation" }, { label:"RA 10173" }]} />
+
+      <Alert type="danger">DOLE requires final pay to be released within 30 days of separation. COE must be issued within 3 business days of written request. Legal review required for terminations for just cause or authorized cause.</Alert>
+
+      <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:16 }}>
+        <div>
+          <Card>
+            <div style={{ fontSize:13,fontWeight:700,color:T.navy,marginBottom:14 }}>Step 1 — Separation Classification</div>
+            <Field label="Employee Name"><Input placeholder="Employee being separated" value="" onChange={()=>{}} /></Field>
+            <Field label="Last Working Day"><Input type="date" value="" onChange={()=>{}} /></Field>
+            <Field label="Separation Type" required>
+              <Select value={sepType} onChange={e=>setSepType(e.target.value)}>
+                <option value="">— Select —</option>
+                <option value="resignation">Voluntary Resignation</option>
+                <option value="endcontract">End of Probationary Contract — Non-Regularization</option>
+                <option value="regularized">End of Probationary — Regularized (no exit)</option>
+                <option value="termination_just">Termination — Just Cause (requires legal review)</option>
+                <option value="termination_auth">Termination — Authorized Cause (requires DOLE notice)</option>
+                <option value="abandonment">Abandonment / AWOL (requires documentation)</option>
+                <option value="mutual">Mutual Agreement / Retirement</option>
+              </Select>
+            </Field>
+            {(sepType === "termination_just" || sepType === "termination_auth") && (
+              <Alert type="danger">This separation type requires legal review and specific DOLE notice requirements. Do not process without ED approval and qualified HR/legal guidance.</Alert>
+            )}
+          </Card>
+
+          <Card>
+            <div style={{ fontSize:13,fontWeight:700,color:T.navy,marginBottom:14 }}>Step 2 — Exit Clearance Checklist</div>
+            {["Property returned: ID, keys, uniform, equipment","All financial accountability settled","Final attendance confirmed in Sprouts PH","Leave balance verified and SIL cash conversion computed","Supervisor signed clearance","HR signed clearance","Admin / Finance signed clearance","201 file closed and archived","System access deactivated in Sprouts","Google Drive folder access removed"].map((item, i) => (
+              <div key={i} style={{ display:"flex",gap:10,alignItems:"center",padding:"8px 0",borderBottom:i<9?`1px dashed ${T.grayL}`:"none" }}>
+                <input type="checkbox" style={{ width:16,height:16,accentColor:T.teal }} />
+                <span style={{ fontSize:12,color:T.dark }}>{item}</span>
+              </div>
+            ))}
+          </Card>
+        </div>
+
+        <div>
+          <Card>
+            <div style={{ fontSize:13,fontWeight:700,color:T.navy,marginBottom:4 }}>Step 3 — Final Pay Calculator</div>
+            <div style={{ fontSize:12,color:T.gray,marginBottom:14 }}>This is a reference calculation tool. Verify all amounts against Sprouts PH payroll data before releasing. Human sign-off required.</div>
+            <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14 }}>
+              {[
+                { label:"Monthly Salary (PHP)", state:monthlySalary, set:setMonthlySalary, placeholder:"e.g. 13260" },
+                { label:"Daily Rate (PHP)", state:dailyRate, set:setDailyRate, placeholder:"Monthly ÷ 26 or actual" },
+                { label:"Unpaid Salary Days", state:unpaidDays, set:setUnpaidDays, placeholder:"Days worked not yet paid" },
+                { label:"Months Worked This Year (for 13th month)", state:monthsWorked, set:setMonthsWorked, placeholder:"1–12" },
+                { label:"Pro-rated SIL Days Unused", state:silDays, set:setSilDays, placeholder:"Per Sprouts balance" },
+              ].map(f => (
+                <Field key={f.label} label={f.label}>
+                  <Input type="number" placeholder={f.placeholder} value={f.state || ""} onChange={e => f.set(parseFloat(e.target.value) || 0)} />
+                </Field>
+              ))}
+            </div>
+
+            <div style={{ background:T.navy,borderRadius:10,padding:16,color:T.white }}>
+              <div style={{ fontSize:12,fontWeight:700,marginBottom:12,opacity:0.7,letterSpacing:0.5 }}>FINAL PAY ESTIMATE</div>
+              {[
+                { label:"Last Salary (unpaid days)", amount:lastSalary },
+                { label:"13th Month Pay (pro-rated)", amount:thirteenMonth },
+                { label:"SIL Cash Conversion", amount:silCash },
+              ].map(r => (
+                <div key={r.label} style={{ display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:`1px solid rgba(255,255,255,0.1)`,fontSize:13 }}>
+                  <span style={{ opacity:0.85 }}>{r.label}</span>
+                  <span style={{ fontWeight:700 }}>PHP {parseFloat(r.amount).toLocaleString("en-PH",{minimumFractionDigits:2})}</span>
+                </div>
+              ))}
+              <div style={{ display:"flex",justifyContent:"space-between",padding:"12px 0 0",fontSize:16,fontWeight:800,borderTop:`2px solid rgba(255,255,255,0.2)`,marginTop:4 }}>
+                <span>TOTAL ESTIMATE</span>
+                <span>PHP {parseFloat(totalFinalPay).toLocaleString("en-PH",{minimumFractionDigits:2})}</span>
+              </div>
+              <div style={{ fontSize:10,opacity:0.6,marginTop:8 }}>⚠️ Estimate only. Verify against Sprouts PH. Does not include separation pay (if applicable) — requires legal determination.</div>
+            </div>
+
+            <div style={{ display:"flex",gap:10,marginTop:14 }}>
+              <Btn color={T.teal} onClick={()=>{}}>Generate Final Pay Sheet for Finance</Btn>
+            </div>
+          </Card>
+
+          <Card>
+            <div style={{ fontSize:13,fontWeight:700,color:T.navy,marginBottom:4 }}>Certificate of Employment (COE)</div>
+            <div style={{ fontSize:12,color:T.gray,marginBottom:12 }}>DOLE: COE must be issued within 3 business days of written request. States name, position, and dates of employment only (no performance evaluation unless employee consents in writing).</div>
+            <Field label="Employee Name"><Input placeholder="Name as on employment record" value="" onChange={()=>{}} /></Field>
+            <Field label="Position(s) Held"><Input placeholder="Final position" value="" onChange={()=>{}} /></Field>
+            <Field label="Date of Hire"><Input type="date" value="" onChange={()=>{}} /></Field>
+            <Field label="Last Day of Work"><Input type="date" value="" onChange={()=>{}} /></Field>
+            <Btn color={T.navy} onClick={()=>{}}>Generate COE for ED Signature</Btn>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MODULE: HR ASSISTANT
+// ═══════════════════════════════════════════════════════════════════
+function HRAssistant() {
+  const [messages, setMessages] = useState([
+    { role:"assistant", text:"Hi! I'm Safe Haven's HR Assistant. I know your Employee Handbook, MOO, DOLE rules, DSWD requirements, and SIL policies. Ask me anything — in English or Filipino.\n\nCommon questions:\n• How many SIL days does [employee] have?\n• What's the process for a Day 30 evaluation?\n• When must the Month 5 notice be delivered?\n• What are the NTE requirements for WC-02?\n• What trainings are required before child-contact work?" }
+  ]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const bottomRef = useRef(null);
+
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior:"smooth" }); }, [messages]);
+
+  const send = async () => {
+    if (!input.trim() || loading) return;
+    const userMsg = input.trim();
+    setInput("");
+    setMessages(prev => [...prev, { role:"user", text:userMsg }]);
+    setLoading(true);
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify({
+          model:"claude-sonnet-4-6", max_tokens:900,
+          system:`You are the HR assistant for A Safe Haven Children's Home Foundation, Inc., a DSWD-accredited residential child care facility in Davao City, Philippines. You answer questions for Jackson (HR), supervisors, and the Executive Director.
+
+KEY POLICIES:
+- 6-month probationary period (DOLE Art. 296). Standards for regularization must be given at time of engagement.
+- Evaluations: Day 30, Day 60, Day 90, Month 5 (decision before Day 180 — ABSOLUTE LEGAL DEADLINE)
+- SIL: 1yr=5days, 2yr=6, 3yr=7, 4yr=8, 5yr=9, 6yr+=10. Clock from hire date. Unused converts to cash on anniversary.
+- Semi-monthly payroll. OT needs pre-authorization. Night differential 10% for 10pm-6am hours (Labor Code Art. 86).
+- Mandatory training for ALL staff: Child Protection (before child contact), Data Privacy, Safe Spaces, Positive Discipline, DRRM/OSH, Incident Reporting, Drug-Free.
+- Maternity: 105 days (RA 11210). Paternity: 7 days. Solo Parent: 7 days/yr. Anti-VAWC: 10 days.
+- NBI Clearance required for all staff (DSWD AO 16 s.2004). PRC License required for RSW (RA 9442).
+- Due process: NTE → 5-day response → conference → decision. ED signs all sanctions.
+- Final pay: within 30 days of separation. COE: within 3 business days of written request.
+- Safeguarding violations: no progressive discipline. Immediate ED and CPO escalation.
+- Child protection policy: zero tolerance. All staff are mandatory reporters (RA 7610).
+- Core values: Love, Joy, Excellence, Faithfulness, Respect.
+- Salaries: House Parent L1 PHP 13,260 / L2 Provisional PHP 14,000 / L2 Full PHP 14,740.
+
+For sensitive matters (termination, final pay, discipline), always recommend human HR and legal review.
+Be warm, practical, and concise. You can answer in English or Filipino.`,
+          messages:[
+            ...messages.filter(m=>m.role!=="assistant"||messages.indexOf(m)>0).slice(-10).map(m=>({ role:m.role==="assistant"?"assistant":"user", content:m.text })),
+            { role:"user", content:userMsg }
+          ]
+        })
+      });
+      const d = await res.json();
+      const reply = d.content?.[0]?.text || "Sorry, I had trouble with that. Please try again.";
+      setMessages(prev => [...prev, { role:"assistant", text:reply }]);
+    } catch {
+      setMessages(prev => [...prev, { role:"assistant", text:"Connection error. Please try again." }]);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div>
+      <SectionTitle icon="🤖" title="HR Assistant" subtitle="Ask any HR, DOLE, DSWD, or policy question — powered by Claude" color={T.teal} />
+      <div style={{ background:T.white,borderRadius:14,border:`1px solid ${T.grayL}`,overflow:"hidden",display:"flex",flexDirection:"column",height:600 }}>
+        <div style={{ background:T.navy,padding:"12px 16px",display:"flex",alignItems:"center",gap:10 }}>
+          <div style={{ width:34,height:34,borderRadius:"50%",background:T.teal,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18 }}>🤖</div>
+          <div>
+            <div style={{ color:T.white,fontWeight:700,fontSize:14 }}>Safe Haven HR Assistant</div>
+            <div style={{ color:T.teal2,fontSize:11,display:"flex",alignItems:"center",gap:4 }}><span style={{ width:6,height:6,borderRadius:"50%",background:"#4ADE80",display:"inline-block" }}/>Online · Knows your handbook, MOO, and DOLE rules</div>
+          </div>
+        </div>
+        <div style={{ flex:1,overflowY:"auto",padding:16,display:"flex",flexDirection:"column",gap:12 }}>
+          {messages.map((m,i) => (
+            <div key={i} style={{ display:"flex",gap:8,alignItems:"flex-start",flexDirection:m.role==="user"?"row-reverse":"row" }}>
+              <div style={{ width:28,height:28,borderRadius:"50%",background:m.role==="user"?T.navy:T.teal,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:T.white,fontWeight:700,flexShrink:0 }}>{m.role==="user"?"J":"🤖"}</div>
+              <div style={{ maxWidth:"80%",padding:"10px 14px",borderRadius:14,fontSize:13,lineHeight:1.7,background:m.role==="user"?T.navy:"#F3F4F6",color:m.role==="user"?T.white:T.dark,borderBottomRightRadius:m.role==="user"?4:14,borderBottomLeftRadius:m.role==="user"?14:4,whiteSpace:"pre-wrap" }}>{m.text}</div>
+            </div>
+          ))}
+          {loading && (
+            <div style={{ display:"flex",gap:8,alignItems:"flex-start" }}>
+              <div style={{ width:28,height:28,borderRadius:"50%",background:T.teal,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:T.white }}>🤖</div>
+              <div style={{ padding:"10px 14px",borderRadius:14,background:"#F3F4F6",display:"flex",gap:5 }}>
+                {[0,1,2].map(i=><div key={i} style={{ width:7,height:7,borderRadius:"50%",background:T.gray,animation:`bounce 1.2s ${i*0.2}s infinite` }}/>)}
+              </div>
+            </div>
+          )}
+          <div ref={bottomRef} />
+        </div>
+        <div style={{ padding:12,borderTop:`1px solid ${T.grayL}`,display:"flex",gap:8 }}>
+          <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&(e.preventDefault(),send())} placeholder="Ask any HR question..." style={{ flex:1,padding:"10px 14px",border:`1.5px solid ${T.grayL}`,borderRadius:24,fontSize:13,fontFamily:"inherit",outline:"none",color:T.dark }} />
+          <button onClick={send} disabled={loading||!input.trim()} style={{ width:40,height:40,borderRadius:"50%",background:loading||!input.trim()?T.gray:T.teal,color:T.white,border:"none",cursor:loading||!input.trim()?"not-allowed":"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>➤</button>
+        </div>
+        <div style={{ padding:"6px 16px 10px",fontSize:10,color:T.gray,textAlign:"center" }}>⚠️ Advisory only. Decisions affecting employment, discipline, or final pay require human HR and ED review.</div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MODULE: SETTINGS
+// ═══════════════════════════════════════════════════════════════════
+function Settings() {
+  return (
+    <div>
+      <SectionTitle icon="⚙️" title="Settings & Configuration" subtitle="Google Drive links, Sprouts setup, phase 2 roadmap" color={T.gray} />
+      <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:16 }}>
+        <Card>
+          <div style={{ fontSize:13,fontWeight:700,color:T.navy,marginBottom:14 }}>📁 Google Drive Links</div>
+          {["HR 201 Files Master Folder","Leave Balance Tracker Sheet","Training Records Sheet","Signed Acknowledgments Folder","Onboarding Document Templates","Exit Clearance Forms"].map((item,i) => (
+            <div key={i} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:i<5?`1px dashed ${T.grayL}`:"none" }}>
+              <span style={{ fontSize:12,color:T.dark }}>{item}</span>
+              <div style={{ display:"flex",gap:6 }}>
+                <Input placeholder="Paste Drive link..." value="" onChange={()=>{}} style={{ width:180,fontSize:11 }} />
+                <Btn size="sm" color={T.teal} onClick={()=>{}}>Save</Btn>
+              </div>
+            </div>
+          ))}
+        </Card>
+
+        <Card>
+          <div style={{ fontSize:13,fontWeight:700,color:T.navy,marginBottom:14 }}>🖥️ Sprouts PH Integration</div>
+          <Alert type="info">Sprouts PH handles payroll, timekeeping, and leave requests. This system handles everything else. Sync points are documented below.</Alert>
+          {["Weekly: Sprouts ↔ employee list mismatch check","On hire: Create Sprouts profile (checklist in Onboarding)","On regularization: Update status in Sprouts","On separation: Deactivate Sprouts access","Monthly: Export SIL balances to Google Sheet for HR Assistant"].map((item,i) => (
+            <div key={i} style={{ display:"flex",gap:8,fontSize:12,color:T.dark,padding:"6px 0",borderBottom:i<4?`1px dashed ${T.grayL}`:"none" }}>
+              <span style={{ color:T.teal }}>↔</span>{item}
+            </div>
+          ))}
+        </Card>
+
+        <Card>
+          <div style={{ fontSize:13,fontWeight:700,color:T.navy,marginBottom:14 }}>📅 Phase 2 Roadmap</div>
+          <div style={{ fontSize:12,color:T.gray,marginBottom:12,lineHeight:1.7 }}>Phase 2 adds a real database (Supabase), user logins, and automated reminders. Same Netlify URL — you never have to move. Sessions with Claude build each feature one at a time.</div>
+          {[
+            { feature:"Supabase database setup", status:"Phase 2", desc:"Persistent storage for all HR records" },
+            { feature:"Supervisor logins", status:"Phase 2", desc:"Each supervisor sees only their team's evaluations" },
+            { feature:"Automated email reminders", status:"Phase 2", desc:"Evaluation deadlines, training expiry, clearances" },
+            { feature:"Sprouts PH data sync", status:"Phase 2", desc:"Auto-pull leave balances, attendance, payslips" },
+            { feature:"DSWD report generator", status:"Phase 2", desc:"Profile of employees, staffing lists, accreditation evidence" },
+            { feature:"Mobile app (PWA)", status:"Phase 3", desc:"Installable on phones, works offline" },
+          ].map((r,i) => (
+            <div key={i} style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",padding:"8px 0",borderBottom:i<5?`1px dashed ${T.grayL}`:"none" }}>
+              <div>
+                <div style={{ fontSize:12,fontWeight:600,color:T.dark }}>{r.feature}</div>
+                <div style={{ fontSize:11,color:T.gray }}>{r.desc}</div>
+              </div>
+              <Badge label={r.status} color={r.status==="Phase 2"?T.teal:T.amber} />
+            </div>
+          ))}
+        </Card>
+
+        <Card>
+          <div style={{ fontSize:13,fontWeight:700,color:T.navy,marginBottom:14 }}>⚠️ Compliance References</div>
+          <div style={{ fontSize:12,color:T.gray,marginBottom:12,lineHeight:1.7 }}>Before production use, verify these with qualified Philippine HR/legal counsel and current government issuances.</div>
+          {[
+            { label:"Region XI Minimum Wage", note:"Verify current RTWPB-XI wage order before configuring payroll" },
+            { label:"SSS Contribution Table", note:"Check latest SSS schedule — changes periodically" },
+            { label:"PhilHealth Premium Rate", note:"Verify current PhilHealth schedule" },
+            { label:"Pag-IBIG Contribution", note:"Verify current HDMF schedule" },
+            { label:"Maternity Leave (RA 11210)", note:"105 days — verify current IRR" },
+            { label:"DSWD AO 16 s.2004", note:"Verify latest DSWD standards bureau requirements" },
+            { label:"NACC/RACCO requirements", note:"Confirm current regional office monitoring checklist" },
+          ].map((r,i) => (
+            <div key={i} style={{ padding:"8px 0",borderBottom:i<6?`1px dashed ${T.grayL}`:"none" }}>
+              <div style={{ fontSize:12,fontWeight:600,color:T.dark }}>{r.label}</div>
+              <div style={{ fontSize:11,color:T.amber }}>⚠️ {r.note}</div>
+            </div>
+          ))}
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MAIN APP SHELL
+// ═══════════════════════════════════════════════════════════════════
+function SafeHavenHRSystem() {
+  const [activeModule, setActiveModule] = useState("dashboard");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  const navigate = (id) => setActiveModule(id);
+
+  const renderModule = () => {
+    switch (activeModule) {
+      case "dashboard":   return <Dashboard navigate={navigate} />;
+      case "recruitment": return <Recruitment />;
+      case "onboarding":  return <Onboarding />;
+      case "employees":   return <EmployeeRecords />;
+      case "performance": return <Performance />;
+      case "training":    return <Training />;
+      case "discipline":  return <Discipline />;
+      case "exit":        return <Exit />;
+      case "assistant":   return <HRAssistant />;
+      case "settings":    return <Settings />;
+      default:            return <Dashboard navigate={navigate} />;
+    }
+  };
+
+  const groupedModules = Object.entries(GROUPS).map(([groupId, group]) => ({
+    ...group, groupId,
+    modules: MODULES.filter(m => m.group === groupId)
+  })).filter(g => g.modules.length > 0);
+
+  return (
+    <div style={{ display:"flex",minHeight:"100vh",background:T.cream,fontFamily:"'Segoe UI',system-ui,sans-serif" }}>
+      {/* Sidebar */}
+      <div style={{ width:sidebarOpen?220:0,flexShrink:0,background:T.navy,overflow:"hidden",transition:"width 0.2s",display:"flex",flexDirection:"column",position:"sticky",top:0,height:"100vh" }}>
+        <div style={{ padding:"18px 14px 14px",borderBottom:`1px solid ${T.navyMid}` }}>
+          <div style={{ display:"flex",alignItems:"center",gap:10 }}>
+            <div style={{ width:36,height:36,borderRadius:9,background:T.teal,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0 }}>🏠</div>
+            <div>
+              <div style={{ color:T.white,fontWeight:800,fontSize:12,lineHeight:1.2 }}>Safe Haven</div>
+              <div style={{ color:T.teal2,fontSize:9,letterSpacing:0.6 }}>HR SYSTEM · PHASE 1</div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ flex:1,overflowY:"auto",padding:"10px 8px" }}>
+          {groupedModules.map(group => (
+            <div key={group.groupId}>
+              {group.label && <div style={{ fontSize:9,fontWeight:700,color:T.teal2,letterSpacing:1,padding:"10px 8px 4px",opacity:0.7 }}>{group.label}</div>}
+              {group.modules.map(mod => {
+                const active = activeModule === mod.id;
+                return (
+                  <button key={mod.id} onClick={() => setActiveModule(mod.id)} style={{ display:"flex",alignItems:"center",gap:8,width:"100%",padding:"9px 10px",marginBottom:2,borderRadius:8,border:"none",cursor:"pointer",background:active?T.teal+"30":"transparent",borderLeft:active?`3px solid ${T.teal}`:"3px solid transparent",textAlign:"left",transition:"all 0.12s" }}>
+                    <span style={{ fontSize:15 }}>{mod.icon}</span>
+                    <span style={{ fontSize:12,fontWeight:active?700:400,color:active?T.white:T.white+"88",lineHeight:1.3 }}>{mod.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+
+        <div style={{ padding:"10px 14px 16px",borderTop:`1px solid ${T.navyMid}`,fontSize:9,color:T.teal2,lineHeight:1.8 }}>
+          DOLE · DSWD · NACC/RACCO<br />
+          Sprouts PH · RA 10173<br />
+          <span style={{ color:T.gold,opacity:0.8 }}>⚠️ Verify all legal rules with qualified PH HR/legal counsel</span>
+        </div>
+      </div>
+
+      {/* Main */}
+      <div style={{ flex:1,display:"flex",flexDirection:"column",minWidth:0 }}>
+        {/* Top bar */}
+        <div style={{ background:T.white,borderBottom:`1px solid ${T.grayL}`,padding:"10px 20px",display:"flex",alignItems:"center",gap:12,position:"sticky",top:0,zIndex:50 }}>
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background:"none",border:"none",cursor:"pointer",fontSize:18,color:T.gray,padding:4,borderRadius:6 }}>☰</button>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:13,fontWeight:700,color:T.navy }}>A Safe Haven Children's Home Foundation, Inc.</div>
+            <div style={{ fontSize:11,color:T.gray }}>Human Resource Management System · {MODULES.find(m=>m.id===activeModule)?.label}</div>
+          </div>
+          <div style={{ display:"flex",gap:6,flexWrap:"wrap" }}>
+            {["DOLE","DSWD","Sprouts"].map(t=><Badge key={t} label={t} color={T.teal}/>)}
+            <Badge label="Phase 1" color={T.gold} />
+          </div>
+        </div>
+
+        {/* Content */}
+        <div style={{ flex:1,padding:24,overflowY:"auto" }}>
+          {renderModule()}
+        </div>
+
+        {/* Footer */}
+        <div style={{ background:T.white,borderTop:`1px solid ${T.grayL}`,padding:"8px 20px",fontSize:10,color:T.gray,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8 }}>
+          <span>Safe Haven HRIS Phase 1 · Google Drive Data Layer · Sprouts PH Integration</span>
+          <span style={{ color:T.red,fontWeight:600 }}>⚠️ All legal and compliance requirements must be verified by qualified PH HR/legal counsel before production use.</span>
+        </div>
+      </div>
+
+      <style>{`@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}`}</style>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(SafeHavenHRSystem,null));
+</script>
+</body>
+</html>

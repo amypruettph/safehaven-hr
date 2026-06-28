@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Safe Haven — Aptitude Assessment</title>
+<style>
+  :root {
+    --navy: #1B2B4B; --teal: #2A7A7A; --teal2: #3AADAD;
+    --gold: #C8941A; --cream: #F7F4EE; --white: #FFFFFF;
+    --red: #B83232; --redL: #FDEAEA; --green: #1A6B3C; --greenL: #EAFAF1;
+    --amber: #C47A15; --amberL: #FEF6E4;
+    --gray: #6B7280; --grayL: #E5E7EB; --dark: #374151;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--cream); color: var(--dark); min-height: 100vh; }
+
+  /* ── HEADER ── */
+  .hdr { background: var(--navy); padding: 16px 20px; }
+  .hdr-top { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .hdr-logo { width: 44px; height: 44px; background: var(--teal); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+  .hdr-title { color: var(--white); font-weight: 800; font-size: 16px; }
+  .hdr-sub { color: var(--teal2); font-size: 11px; margin-top: 2px; letter-spacing: 0.4px; }
+  .hdr-meta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+  /* ── TIMER ── */
+  .timer-pill {
+    background: rgba(255,255,255,0.12); color: var(--white);
+    border-radius: 20px; padding: 6px 14px;
+    font-size: 14px; font-weight: 800; letter-spacing: 1px;
+    display: flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums;
+  }
+  .timer-pill.warn { background: var(--amber) + "44"; color: #FCD34D; }
+  .timer-pill.urgent { background: rgba(184,50,50,0.3); color: #FCA5A5; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+  /* ── PROGRESS ── */
+  .prog-wrap { background: rgba(255,255,255,0.1); border-radius: 4px; height: 5px; flex: 1; overflow: hidden; }
+  .prog-bar { height: 100%; background: var(--teal2); border-radius: 4px; transition: width 0.3s; }
+
+  /* ── ROLE SELECT ── */
+  .role-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .role-card { background: var(--white); border-radius: 20px; padding: 36px 32px; max-width: 520px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.12); text-align: center; }
+  .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 24px 0; }
+  .role-btn { border: 2px solid var(--grayL); background: var(--white); border-radius: 14px; padding: 18px 14px; cursor: pointer; text-align: center; transition: all 0.15s; }
+  .role-btn:hover { border-color: var(--teal); box-shadow: 0 4px 16px rgba(42,122,122,0.15); transform: translateY(-1px); }
+  .role-btn .ri { font-size: 28px; margin-bottom: 8px; display: block; }
+  .role-btn .rl { font-size: 13px; font-weight: 700; color: var(--navy); }
+  .role-btn .rs { font-size: 11px; color: var(--gray); margin-top: 3px; line-height: 1.4; }
+
+  /* ── INTRO SCREEN ── */
+  .intro-screen { max-width: 580px; margin: 0 auto; padding: 24px; }
+  .intro-card { background: var(--white); border-radius: 16px; padding: 28px; border: 1px solid var(--grayL); }
+  .intro-icon { font-size: 40px; margin-bottom: 14px; }
+  .intro-title { font-size: 20px; font-weight: 800; color: var(--navy); margin-bottom: 8px; }
+  .intro-sub { font-size: 13px; color: var(--gray); line-height: 1.7; margin-bottom: 20px; }
+  .section-list { margin: 0; padding: 0; list-style: none; }
+  .section-list li { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px dashed var(--grayL); font-size: 13px; color: var(--dark); }
+  .section-list li:last-child { border-bottom: none; }
+  .s-num { width: 22px; height: 22px; border-radius: 50%; background: var(--teal); color: var(--white); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .warn-box { background: var(--amberL); border-left: 4px solid var(--amber); border-radius: 0 8px 8px 0; padding: 10px 14px; font-size: 12px; color: var(--dark); margin: 16px 0; line-height: 1.6; }
+  .start-btn { width: 100%; padding: 15px; background: var(--teal); color: var(--white); border: none; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer; margin-top: 18px; transition: background 0.15s; }
+  .start-btn:hover { background: var(--navy); }
+
+  /* ── QUESTION SCREEN ── */
+  .q-screen { max-width: 680px; margin: 0 auto; padding: 20px; }
+  .section-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--navy); color: var(--white); border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 14px; }
+  .q-card { background: var(--white); border-radius: 16px; border: 1px solid var(--grayL); overflow: hidden; margin-bottom: 20px; }
+  .q-head { padding: 18px 20px; background: #F9FAFB; border-bottom: 1px solid var(--grayL); }
+  .q-num { font-size: 10px; font-weight: 700; color: var(--teal); letter-spacing: 0.5px; margin-bottom: 6px; }
+  .q-text { font-size: 15px; font-weight: 700; color: var(--navy); line-height: 1.6; }
+  .q-context { font-size: 12px; color: var(--gray); margin-top: 6px; line-height: 1.6; font-style: italic; }
+  .q-body { padding: 18px 20px; }
+  .choice-list { display: flex; flex-direction: column; gap: 8px; }
+  .choice { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 10px; border: 1.5px solid var(--grayL); cursor: pointer; transition: all 0.12s; }
+  .choice:has(input:checked) { border-color: var(--teal); background: #EEF8F8; }
+  .choice input { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; accent-color: var(--teal); cursor: pointer; }
+  .choice span { font-size: 13px; line-height: 1.6; color: var(--dark); }
+  .write-area { width: 100%; min-height: 120px; padding: 12px 14px; border: 1.5px solid var(--grayL); border-radius: 10px; font-size: 14px; font-family: inherit; color: var(--dark); outline: none; resize: vertical; transition: border-color 0.15s; line-height: 1.7; }
+  .write-area:focus { border-color: var(--teal); }
+  .word-count { font-size: 11px; color: var(--gray); margin-top: 6px; text-align: right; }
+  .write-prompt { font-size: 12px; color: var(--teal); margin-bottom: 8px; font-weight: 600; }
+
+  /* ── SCENARIO BOX ── */
+  .scenario { background: var(--navy) + "08"; border: 1px solid var(--navy) + "22"; border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; font-size: 13px; line-height: 1.8; color: var(--dark); }
+  .scenario strong { color: var(--navy); }
+
+  /* ── NAV ── */
+  .q-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
+  .nav-btn { padding: 11px 22px; border-radius: 10px; border: none; font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.15s; }
+  .nav-prev { background: var(--grayL); color: var(--dark); }
+  .nav-next { background: var(--teal); color: var(--white); }
+  .nav-next:disabled { background: var(--gray); cursor: not-allowed; }
+  .q-dots { display: flex; gap: 5px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--grayL); transition: background 0.2s; }
+  .dot.done { background: var(--teal); }
+  .dot.current { background: var(--navy); transform: scale(1.3); }
+
+  /* ── RESULTS ── */
+  .results-screen { max-width: 700px; margin: 0 auto; padding: 24px; }
+  .result-header { background: linear-gradient(135deg, var(--navy), var(--teal)); border-radius: 16px; padding: 24px; text-align: center; margin-bottom: 20px; color: var(--white); }
+  .result-score { font-size: 52px; font-weight: 800; margin: 10px 0 4px; }
+  .result-label { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .result-sub { font-size: 13px; opacity: 0.8; }
+  .result-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .result-stat { background: var(--white); border-radius: 12px; padding: 16px; text-align: center; border: 1px solid var(--grayL); }
+  .stat-num { font-size: 24px; font-weight: 800; color: var(--navy); }
+  .stat-lbl { font-size: 11px; color: var(--gray); margin-top: 3px; }
+  .review-card { background: var(--white); border-radius: 14px; border: 1px solid var(--grayL); overflow: hidden; margin-bottom: 14px; }
+  .review-head { padding: 12px 16px; font-size: 13px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+  .review-body { padding: 14px 16px; }
+  .correct-ans { background: var(--greenL); border-radius: 8px; padding: 8px 12px; font-size: 12px; color: var(--green); margin-top: 8px; }
+  .wrong-ans { background: var(--redL); border-radius: 8px; padding: 8px 12px; font-size: 12px; color: var(--red); margin-top: 8px; }
+  .written-ans { background: #F3F4F6; border-radius: 8px; padding: 10px 12px; font-size: 13px; color: var(--dark); margin-top: 8px; line-height: 1.7; border-left: 3px solid var(--teal); }
+  .flag-box { background: var(--amberL); border-left: 3px solid var(--amber); border-radius: 0 8px 8px 0; padding: 8px 12px; font-size: 11px; color: var(--amber); margin-top: 6px; font-weight: 600; }
+  .hr-note { background: var(--navy) + "08"; border: 1px solid var(--navy) + "22"; border-radius: 10px; padding: 14px 16px; font-size: 12px; color: var(--dark); line-height: 1.7; }
+
+  /* ── TIMEOUT ── */
+  .timeout-screen { min-height: 60vh; display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center; padding: 40px; }
+  .timeout-icon { font-size: 52px; margin-bottom: 16px; }
+
+  @media(max-width:480px) {
+    .role-grid { grid-template-columns: 1fr; }
+    .result-grid { grid-template-columns: repeat(2,1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+// ASSESSMENT DATA
+// ════════════════════════════════════════════════════════════════
+
+const ASSESSMENTS = {
+
+  // ── HOUSE PARENT ─────────────────────────────────────────────
+  houseparent: {
+    role: "House Parent",
+    icon: "🏠",
+    color: "#1B2B4B",
+    totalMinutes: 18,
+    intro: {
+      title: "House Parent Competency Assessment",
+      description: "This short assessment helps Safe Haven understand how you think and communicate in situations you will actually face as a House Parent. There are no trick questions. We are looking for clear thinking, honest judgment, and basic communication skills.",
+      sections: [
+        { name: "Reading a Scenario", desc: "Read a real child-care situation and answer questions about it", qs: 4, mins: 5 },
+        { name: "Incident Report Writing", desc: "Write a short observation note the way a House Parent would", qs: 1, mins: 6 },
+        { name: "Situational Judgment", desc: "Choose the best response to real House Parent situations", qs: 5, mins: 5 },
+        { name: "Basic Numeracy", desc: "Simple practical math you would use in the role", qs: 2, mins: 2 },
+      ],
+      instructions: [
+        "You have 18 minutes from when you click Start.",
+        "The timer runs continuously — it does not pause.",
+        "Answer every question. Unanswered questions count as wrong.",
+        "For written questions, aim for 3–5 clear sentences.",
+        "Answer based on what you would actually do — not what sounds perfect.",
+      ]
+    },
+    questions: [
+      // Section 1: Reading
+      {
+        section: "Section 1: Reading a Scenario",
+        type: "reading_mc",
+        scenario: "It is 10:30pm. You are on the overnight shift at Safe Haven. Nine-year-old Joshua, who arrived at the home 3 weeks ago, is still awake. He is sitting alone in the hallway outside his room, rocking back and forth and not speaking. When you approach him calmly, he says 'I don't want to go back in there.' He will not explain why. The other children in his room are asleep.",
+        question: "What is the FIRST thing you should do?",
+        choices: [
+          "Tell Joshua firmly that it is past bedtime and he needs to return to his room immediately.",
+          "Sit near Joshua at his level, stay calm, and let him know you are there with him without pressuring him to talk.",
+          "Call your supervisor immediately and wait for instructions before doing anything.",
+          "Ask Joshua directly if someone in the room hurt him, so you can report it right away.",
+        ],
+        correct: 1,
+        explanation: "The first step is a calm, non-threatening presence. A child who won't go back to their room may be scared, traumatized, or disclosing something — but pressuring them or immediately interrogating them can cause harm. Stay with them, regulate the space, then gently explore what is happening. You can call your supervisor after ensuring Joshua is calm and safe.",
+        hrFlag: null,
+      },
+      {
+        section: "Section 1: Reading a Scenario",
+        type: "reading_mc",
+        scenario: "(Continuing the same situation) After 10 minutes of sitting quietly with Joshua, he says: 'Kuya Jay pulled my hair when the lights went off last night and told me not to tell anyone.'",
+        question: "What should you do with this information?",
+        choices: [
+          "Ask Joshua more questions to get all the details before reporting anything.",
+          "Reassure Joshua you will handle it privately and ask him to go to bed — you will speak to Kuya Jay in the morning.",
+          "Document what Joshua said in his exact words and report it immediately to your supervisor or the Child Protection Officer, even if it is late at night.",
+          "Speak to Kuya Jay tonight to hear his side of the story before filing anything.",
+        ],
+        correct: 2,
+        explanation: "This is a child protection disclosure. You must: (1) listen without pressing for more details, (2) document the child's exact words, and (3) report immediately to your supervisor or CPO — there is no 'morning' for safeguarding concerns. You must not investigate yourself, confront the alleged person, or promise confidentiality.",
+        hrFlag: "Any answer other than C is a serious red flag. A House Parent who would delay, investigate themselves, or promise secrecy poses a risk to children.",
+      },
+      {
+        section: "Section 1: Reading a Scenario",
+        type: "reading_mc",
+        scenario: "(Still the same night) You have made your report to the supervisor. It is now 11:15pm. Joshua is calmer but still does not want to go back to his room. You need to document what happened for the morning shift.",
+        question: "Which of the following is the best way to document what Joshua told you?",
+        choices: [
+          "\"Joshua had a bad night and said something happened in his room. I reported it. He is now calm.\"",
+          "\"At approximately 10:30pm, Joshua was found sitting alone in the hallway, rocking. He would not return to his room. After approximately 10 minutes, he stated: 'Kuya Jay pulled my hair when the lights went off last night and told me not to tell anyone.' I reported this to [supervisor name] at [time]. Joshua remained calm in the hallway for the remainder of the shift.\"",
+          "\"Joshua made an allegation against another child. I handled it according to protocol.\"",
+          "\"Something happened between Joshua and another child. I filed a verbal report with the supervisor.\"",
+        ],
+        correct: 1,
+        explanation: "Documentation must be specific, factual, and use the child's actual words in quotation marks. Times, names, and exact statements matter — especially in child protection cases that may be reviewed by DSWD, RACCO, or legal authorities. Vague documentation fails the child and creates legal risk.",
+        hrFlag: null,
+      },
+      {
+        section: "Section 1: Reading a Scenario",
+        type: "reading_mc",
+        scenario: "It is the next morning. You are handing over to the day shift House Parent. You are exhausted from the overnight events.",
+        question: "What must you include in your shift handover?",
+        choices: [
+          "Only the most important things — the child protection incident can wait for the supervisor to brief the next shift.",
+          "Everything that happened, including Joshua's disclosure, the report you made, who you reported to, Joshua's current status, and any follow-up actions needed.",
+          "A general note that it was a difficult night and the next shift should check in with the supervisor.",
+          "Nothing about Joshua — to protect his privacy, only the CPO should share that information.",
+        ],
+        correct: 1,
+        explanation: "Shift handovers must be complete and accurate. The incoming House Parent needs to know about Joshua's emotional state and the previous night's events to continue appropriate care. Confidentiality means not sharing outside Safe Haven — not keeping the care team uninformed. Child safety requires continuity of information.",
+        hrFlag: null,
+      },
+      // Section 2: Writing
+      {
+        section: "Section 2: Incident Report Writing",
+        type: "writing",
+        question: "A child named Anna (8 years old) refused to eat lunch today. When you tried to encourage her, she said: 'I don't want to eat, I want my Nanay.' She then started crying quietly and went to sit alone in the corner of the room. She stayed there for about 20 minutes before returning to the group. She did not eat lunch.",
+        prompt: "Write a short observation note about what happened, the way you would write it in a real Safe Haven daily record. Use factual, specific language. Include the child's words and what you observed. Do not include your opinions about why it happened — only what you saw and heard.",
+        minWords: 40,
+        guidance: "A good answer will: use specific times or approximate times, use the child's exact words in quotes, describe behavior factually without interpretation, and note what happened afterward. Aim for 3–6 clear sentences.",
+        hrFlags: [
+          "Answer is vague (e.g. 'Anna was sad today')",
+          "Answer includes opinion/diagnosis (e.g. 'Anna is depressed' or 'Anna missed her mom')",
+          "Answer is less than 2 sentences",
+          "Answer does not mention the child's actual words",
+        ]
+      },
+      // Section 3: Situational Judgment
+      {
+        section: "Section 3: Situational Judgment",
+        type: "mc",
+        question: "A 12-year-old boy in your care has been rude and disruptive all morning — talking back, refusing to do chores, and using bad language toward other children. You have tried calm redirecting twice. He is now refusing to move from the doorway. What is the best next step?",
+        choices: [
+          "Physically move him out of the doorway to restore order in the house.",
+          "Raise your voice firmly so he understands the seriousness of his behavior.",
+          "Give him a natural consequence (e.g. loss of a privilege) and document the behavior, then notify your supervisor.",
+          "Ignore the behavior for now and hope he calms down on his own.",
+        ],
+        correct: 2,
+        explanation: "Physical force is never appropriate for behavioral management. Raising your voice escalates rather than de-escalates. Ignoring a doorway block creates a safety issue. The correct response is a clear, calm consequence, documentation, and supervisor notification — especially if the behavior is repeated or escalating.",
+        hrFlag: "Answer A (physical force) is a hard red flag and a potential CP-05 offense.",
+      },
+      {
+        section: "Section 3: Situational Judgment",
+        type: "mc",
+        question: "A child you care for has started calling you 'Mommy/Daddy' and asks to sleep in your room because she feels safer with you. What do you do?",
+        choices: [
+          "Allow it — the child needs connection and you want her to feel safe.",
+          "Gently decline, explain you care about her but that you sleep separately, and report this attachment behavior to the social worker for proper support.",
+          "Firmly tell her this is against the rules and she should not ask again.",
+          "Agree to sit with her until she falls asleep in her room every night.",
+        ],
+        correct: 1,
+        explanation: "This is a professional boundaries situation. The child's attachment needs are real and valid — but the correct response is to acknowledge her warmly while maintaining appropriate boundaries, and to flag this to the social worker so her attachment and trauma needs can be properly supported. Allowing room-sharing crosses a serious boundary.",
+        hrFlag: "Answer A is a boundary violation. This behavior, however well-intentioned, creates a safeguarding risk.",
+      },
+      {
+        section: "Section 3: Situational Judgment",
+        type: "mc",
+        question: "You are on shift and you notice that a fellow House Parent has been short-tempered with children all day — raising their voice, being dismissive, and at one point grabbing a child's arm roughly to move them. What do you do?",
+        choices: [
+          "Talk to the House Parent privately after the shift and tell them to calm down — you do not want to make trouble.",
+          "Say nothing — everyone has bad days, and it is not your place to report a colleague.",
+          "Document what you witnessed and report it to your supervisor or the Child Protection Officer as soon as possible, even during the shift if needed.",
+          "Wait to see if it happens again before reporting — one incident may not be serious.",
+        ],
+        correct: 2,
+        explanation: "Grabbing a child's arm is a safeguarding concern — it is not a 'bad day' to be overlooked. House Parents are mandatory reporters for each other. Waiting, covering up, or handling it privately instead of reporting are all policy violations. Immediate documentation and reporting is required.",
+        hrFlag: "Answers A or B indicate someone who would not report a colleague — a serious safeguarding risk in a residential setting.",
+      },
+      {
+        section: "Section 3: Situational Judgment",
+        type: "mc",
+        question: "A child's biological parent visits and slips the child a mobile phone 'to stay in touch.' The child shows it to you excitedly. What do you do?",
+        choices: [
+          "Let the child keep it — it is a gift from their parent and taking it away would hurt them.",
+          "Take the phone, explain calmly to the child why it cannot stay (using a Safe Haven-appropriate explanation), document the incident, and report it to the social worker.",
+          "Allow it for now but monitor how the child uses it.",
+          "Tell the child to hide it so other children do not see and become jealous.",
+        ],
+        correct: 1,
+        explanation: "Unauthorized devices in residential care are a safeguarding concern — they create risks around unsupervised communication, inappropriate content, and case confidentiality. The correct response is to remove the device with a compassionate explanation, document it, and notify the social worker who manages the family's case and visitation.",
+        hrFlag: null,
+      },
+      {
+        section: "Section 3: Situational Judgment",
+        type: "mc",
+        question: "It is 6:30am and you are ending your overnight shift. You have not slept and feel exhausted and irritable. The day shift House Parent is 20 minutes late. Three children are already awake and starting to argue with each other. What do you do?",
+        choices: [
+          "Leave at your scheduled time — it is not your responsibility if the other House Parent is late.",
+          "Stay, manage the children calmly, document that the incoming shift was late, and notify your supervisor.",
+          "Ask one of the older children to watch the younger ones while you rest for a few minutes.",
+          "Call the late House Parent repeatedly until they answer.",
+        ],
+        correct: 1,
+        explanation: "Child supervision cannot have a gap. You must remain on duty until a qualified replacement is present. Leaving children unsupervised is a safeguarding failure. Asking children to supervise children is never acceptable. Document the late arrival and notify your supervisor — this is also an HR and compliance matter.",
+        hrFlag: "Answer A or C are both safeguarding failures.",
+      },
+      // Section 4: Numeracy
+      {
+        section: "Section 4: Basic Numeracy",
+        type: "mc",
+        question: "A child needs to take 5ml of medicine three times a day. The bottle contains 90ml. How many full days will the medicine last?",
+        choices: [
+          "4 days", "6 days", "5 days", "3 days"
+        ],
+        correct: 1,
+        explanation: "3 doses × 5ml = 15ml per day. 90ml ÷ 15ml = 6 days. Basic numeracy for medication tracking is an essential House Parent skill.",
+        hrFlag: null,
+      },
+      {
+        section: "Section 4: Basic Numeracy",
+        type: "mc",
+        question: "You are preparing a simple afternoon snack for 8 children. The recipe makes enough for 4 children. How do you adjust it?",
+        choices: [
+          "Make the recipe 3 times", "Make the recipe 2 times", "Make the recipe 1.5 times", "Make the recipe 4 times"
+        ],
+        correct: 1,
+        explanation: "8 ÷ 4 = 2. You need to double the recipe. This tests basic proportional thinking needed for meal preparation and resource management.",
+        hrFlag: null,
+      },
+    ]
+  },
+
+  // ── SOCIAL WORKER / RSW ───────────────────────────────────────
+  socialworker: {
+    role: "Social Worker / RSW",
+    icon: "👩‍💼",
+    color: "#2A7A7A",
+    totalMinutes: 20,
+    intro: {
+      title: "Social Worker / RSW Competency Assessment",
+      description: "This assessment evaluates your professional reasoning, documentation skills, and ethical judgment in situations you will face as an RSW at a DSWD-accredited residential care facility. It is designed to reflect real case management and child protection scenarios.",
+      sections: [
+        { name: "Case Reading & Analysis", desc: "Read a case scenario and answer professional judgment questions", qs: 4, mins: 7 },
+        { name: "Documentation Writing", desc: "Write a case note the way an RSW would", qs: 1, mins: 7 },
+        { name: "Professional Ethics", desc: "Ethical and legal reasoning scenarios", qs: 4, mins: 5 },
+        { name: "DSWD Process Knowledge", desc: "DSWD/NACC/RACCO process awareness questions", qs: 2, mins: 1 },
+      ],
+      instructions: [
+        "You have 20 minutes from when you click Start.",
+        "This test reflects real RSW work at a residential facility — answer professionally.",
+        "For written questions, write as you would in an actual case note — factual, specific, and structured.",
+        "The timer runs continuously and cannot be paused.",
+        "Your score and written answers will be reviewed by Safe Haven HR and the Executive Director.",
+      ]
+    },
+    questions: [
+      // Section 1: Case Reading
+      {
+        section: "Section 1: Case Reading and Analysis",
+        type: "reading_mc",
+        scenario: "Maria, 11 years old, has been at Safe Haven for 8 months. She was admitted after being found abandoned. Her biological mother, Mrs. R, has begun visiting regularly (monthly) and has expressed a desire for family reunification. During your last session, Maria told you: 'I want to go home, but I'm scared my mom will leave again.' Mrs. R lives with a new partner and has recently secured part-time work. A home visit you conducted 2 weeks ago showed the home is clean but crowded. Mrs. R's partner was polite but you noted he did not interact with Maria during the visit.",
+        question: "Based on this information, what is the MOST appropriate next step in Maria's permanency planning?",
+        choices: [
+          "Recommend immediate family reunification since the mother is now stable and Maria wants to go home.",
+          "Conduct a formal safety assessment of the home environment including the mother's partner, and schedule a structured family interaction session to assess Maria's comfort and the partner's relationship with her before making a reunification recommendation.",
+          "Close the reunification track — Maria expressed fear, which indicates she does not truly want to go home.",
+          "Request DSWD to immediately remove Mrs. R's visiting rights until the safety concerns are fully resolved.",
+        ],
+        correct: 1,
+        explanation: "A child's ambivalent statement ('I want to go home but I'm scared') is not a reason to close reunification — it reflects healthy, realistic complexity. But reunification cannot proceed without assessing the new household member (Mrs. R's partner), conducting structured family sessions, and completing a formal safety and capacity assessment. Immediate reunification without this would be professionally negligent.",
+        hrFlag: "Answer A (immediate reunification without assessment) indicates failure to apply DSWD permanency planning standards.",
+      },
+      {
+        section: "Section 1: Case Reading and Analysis",
+        type: "reading_mc",
+        scenario: "(Continuing Maria's case) During a one-on-one session, Maria tells you: 'My mom's partner looked at me in a weird way when I visited. I don't want to say more.' She then becomes quiet and will not elaborate.",
+        question: "How do you respond professionally?",
+        choices: [
+          "Tell Maria she needs to explain more clearly before you can help her.",
+          "Reassure Maria that what she said will stay between you and her and that she does not need to say more right now.",
+          "Document Maria's statement in her exact words, do not press for more details in this session, and immediately consult the Child Protection Officer and your supervisor about this disclosure.",
+          "Call Mrs. R to let her know Maria made a complaint about her partner so the family can address it directly.",
+        ],
+        correct: 2,
+        explanation: "A child hinting at inappropriate behavior by an adult in a potential reunification home is a child protection concern. The correct response is to: (1) not press the child for details in the same session, (2) document the exact words, and (3) immediately consult the CPO and supervisor. You must never promise confidentiality to a child making a disclosure, and you must never contact the alleged person or their household before consulting the CPO.",
+        hrFlag: "Answer D (calling the family) is a serious breach of child protection protocol and could endanger the child.",
+      },
+      {
+        section: "Section 1: Case Reading and Analysis",
+        type: "reading_mc",
+        scenario: "A separate case: You are managing the case of 7-year-old Kevin, who has been at Safe Haven for 3 months. His CMIP is due for review. The House Parent has reported that Kevin has become withdrawn and stopped participating in group activities over the past two weeks. His teacher notes he is no longer completing schoolwork.",
+        question: "What does this change in behavior most likely require from you as Kevin's social worker?",
+        choices: [
+          "Update the CMIP to note the behavioral changes and schedule a review next month.",
+          "Conduct an urgent individual session with Kevin to explore the behavioral change, consult with the House Parent and teacher, review whether any recent events may have triggered this, update the CMIP accordingly, and flag this to your supervisor.",
+          "Inform Kevin's family of the behavioral change and ask if anything happened during the last visit.",
+          "Refer Kevin to a psychiatrist immediately — withdrawal at this level suggests a mental health disorder.",
+        ],
+        correct: 1,
+        explanation: "Significant behavioral change in a residential child is always a clinical and safeguarding signal. A coordinated, interdisciplinary response is required: individual session, consultation with care team, event review, and CMIP update. Waiting a month or jumping immediately to psychiatric referral without assessment both fail the child. Family contact (if applicable) would follow consultation, not precede it.",
+        hrFlag: null,
+      },
+      {
+        section: "Section 1: Case Reading and Analysis",
+        type: "reading_mc",
+        scenario: "DSWD conducts a monitoring visit next week. You are responsible for preparing the case files for Kevin and Maria.",
+        question: "Which of the following best describes what the case files should contain for a DSWD monitoring visit?",
+        choices: [
+          "A summary of each child's status prepared specifically for the visit.",
+          "Current, organized, and complete documentation including: admission records, assessment results, CMIP with current review, progress notes, family contact records, case conference records, court orders if applicable, and all consents — reflecting the actual ongoing case work, not a summary prepared for the visit.",
+          "The most recent case conference minutes and the current CMIP only.",
+          "A narrative report written by the social worker explaining each child's case in plain language.",
+        ],
+        correct: 1,
+        explanation: "DSWD monitoring visits assess whether documentation reflects real, ongoing, quality casework — not whether files look good for the visit. The file must contain the full continuum of documentation. NACC/RACCO reviewers can spot files assembled for visits rather than maintained consistently. Incomplete or assembled-for-visit documentation is a major accreditation finding.",
+        hrFlag: null,
+      },
+      // Section 2: Documentation
+      {
+        section: "Section 2: Documentation Writing",
+        type: "writing",
+        question: "Write a brief case progress note (as you would in an actual case file) for the following session:\n\nYou conducted a 30-minute individual session with Maria (11 years old) on [today's date]. During the session, she was cooperative and calm. She talked about her feelings about visiting her mother. She said she 'feels happy when Mom comes but worried she'll leave again like before.' You explored coping strategies with her and she identified that talking to you and drawing help her manage her feelings. She did not disclose any new concerns. You plan to schedule a family session next month.",
+        prompt: "Write the case progress note. Use professional social work language. Include: date, purpose of session, child's presentation, key statements (in quotes), clinical observations, interventions used, and plan.",
+        minWords: 60,
+        guidance: "A good answer will: use structured case note format, include specific child statements in quotes, note the child's emotional presentation, describe the intervention approach, and state the next step clearly. This is reviewed as a writing competency test by the Executive Director.",
+        hrFlags: [
+          "Answer reads like a personal narrative rather than a professional case note",
+          "No direct quotes from the child",
+          "No next steps or plan stated",
+          "Less than 4 sentences",
+          "Uses informal language ('Maria seemed okay')",
+        ]
+      },
+      // Section 3: Ethics
+      {
+        section: "Section 3: Professional Ethics",
+        type: "mc",
+        question: "A colleague social worker tells you informally that one of your shared cases (a child at Safe Haven) has been discussed by name and situation in a group chat with non-Safe Haven people, including a photo of the child. What do you do?",
+        choices: [
+          "Talk to the colleague privately and ask them to delete the messages — a formal report could damage your relationship.",
+          "Report the incident immediately to your supervisor and the Data Privacy Officer, document what was told to you, and treat it as a potential data privacy breach under RA 10173.",
+          "Monitor the situation for a week before deciding whether it is serious enough to report.",
+          "Send a reminder to all staff about data privacy — there is no need to escalate this specific incident.",
+        ],
+        correct: 1,
+        explanation: "Sharing a child's identity and case information outside the facility — especially with a photo — is a serious data privacy breach under RA 10173 and a safeguarding violation. This must be reported immediately to the supervisor and DPO. It is not a 'have a talk with them' situation. DSWD and NPC may need to be notified depending on the scope.",
+        hrFlag: "Answer A or C reflects failure to understand mandatory reporting of data privacy breaches.",
+      },
+      {
+        section: "Section 3: Professional Ethics",
+        type: "mc",
+        question: "A child's biological grandmother (not the legal guardian) visits the facility and asks you to tell her the current legal status of the child and whether the child will be adopted. She says she has a right to know as family. What do you do?",
+        choices: [
+          "Provide the information — she is family and her concern is genuine.",
+          "Politely explain that case information is confidential. Only legally authorized parties may receive case details. Offer to connect her to the appropriate supervisor or legal guardian for guidance on how she may formally request information.",
+          "Ask the child whether they want their grandmother to know — if the child says yes, share the information.",
+          "Tell her the general status without specific legal details as a compromise.",
+        ],
+        correct: 1,
+        explanation: "Case confidentiality is not negotiable based on emotional relationship. Only legally authorized parties (legal guardians, DSWD, court-authorized persons) may receive case information. Well-meaning relatives still require proper authorization. Sharing case status — including adoption or legal information — without authorization is a RA 10173 violation and can jeopardize legal proceedings.",
+        hrFlag: "Answer A or C both violate case confidentiality.",
+      },
+      {
+        section: "Section 3: Professional Ethics",
+        type: "mc",
+        question: "You discover during a home assessment that the biological father of a child in your caseload is a neighbor of a friend of yours. Your friend asks if you 'know anything about that family' since they seem troubled. What do you do?",
+        choices: [
+          "Share general information only — nothing confidential.",
+          "Firmly decline to share any information, explain you cannot discuss cases or families you encounter in your work, and do not confirm or deny that you know them professionally.",
+          "Tell your friend you cannot share details but confirm that yes, you do know the family professionally.",
+          "Change the subject and avoid the conversation.",
+        ],
+        correct: 1,
+        explanation: "Confirming professional knowledge of a family is itself a disclosure. Even 'I know them but can't share details' reveals that the family is connected to a case. The professional answer is to neither confirm nor deny, and to clearly decline. Confidentiality protects children and families regardless of the information's perceived sensitivity.",
+        hrFlag: "Answer A or C are both confidentiality violations — even seeming minor ones.",
+      },
+      {
+        section: "Section 3: Professional Ethics",
+        type: "mc",
+        question: "You strongly believe that a child in your caseload should be recommended for adoption rather than family reunification. Your supervisor disagrees and wants to continue the reunification track. What is the professionally appropriate response?",
+        choices: [
+          "Document your professional assessment and rationale clearly in the case file, express your disagreement to your supervisor through proper channels, and advocate through the case conference process — while continuing to implement the agreed plan professionally.",
+          "Implement the supervisor's plan without comment — supervisors always know best.",
+          "Go directly to DSWD to flag the case without informing your supervisor.",
+          "Tell the child's family your private view that adoption would be better for the child.",
+        ],
+        correct: 0,
+        explanation: "Professional disagreement is handled through documentation, case conferences, and proper supervisory channels — not by going around the supervisor or involving external parties without cause, and never by sharing your private assessment with the family. If you believe the child is at risk, that is a different escalation path (safeguarding). Otherwise: document, advocate through proper channels, and implement professionally.",
+        hrFlag: null,
+      },
+      // Section 4: Process Knowledge
+      {
+        section: "Section 4: DSWD Process Knowledge",
+        type: "mc",
+        question: "Under DSWD standards, what is the maximum recommended caseload for a Registered Social Worker in a residential child-care facility?",
+        choices: [
+          "1 social worker per 10 children", "1 social worker per 20 active cases", "1 social worker per 30 children", "No official ratio — it depends on the facility"
+        ],
+        correct: 1,
+        explanation: "Per DSWD standards and Safe Haven's MOO (Appendix 14), the maximum caseload for an RSW is 1:20 active cases. This ratio is a DSWD accreditation standard and is reviewed during RACCO/NACC monitoring visits.",
+        hrFlag: null,
+      },
+      {
+        section: "Section 4: DSWD Process Knowledge",
+        type: "mc",
+        question: "AACCPS Standard 1.1 relates to which of the following?",
+        choices: [
+          "Staff payroll and benefits administration",
+          "Beneficiary care, protection, and rights in a residential care setting",
+          "Financial auditing requirements for DSWD-accredited agencies",
+          "Physical facility and building safety standards",
+        ],
+        correct: 1,
+        explanation: "AACCPS (Assessment and Accreditation of Child-Caring and Placing Services) Standard 1.1 covers beneficiary care and protection — the core standard for how children's rights, safety, and development are upheld in a residential care facility. This is a foundational NACC/RACCO accreditation standard.",
+        hrFlag: null,
+      },
+    ]
+  }
+};
+
+// ════════════════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════════════════
+let state = {
+  screen: "role",   // role | intro | question | results | timeout
+  role: null,
+  currentQ: 0,
+  answers: {},      // { qIdx: value }
+  timerInterval: null,
+  secondsLeft: 0,
+  startTime: null,
+};
+
+// ════════════════════════════════════════════════════════════════
+// TIMER
+// ════════════════════════════════════════════════════════════════
+function startTimer(minutes) {
+  state.secondsLeft = minutes * 60;
+  state.startTime = Date.now();
+  state.timerInterval = setInterval(() => {
+    state.secondsLeft--;
+    updateTimerDisplay();
+    if (state.secondsLeft <= 0) {
+      clearInterval(state.timerInterval);
+      state.screen = "timeout";
+      render();
+    }
+  }, 1000);
+}
+
+function formatTime(secs) {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('timer-display');
+  if (!el) return;
+  el.textContent = '⏱ ' + formatTime(state.secondsLeft);
+  el.className = 'timer-pill' +
+    (state.secondsLeft < 120 ? ' urgent' : state.secondsLeft < 300 ? ' warn' : '');
+}
+
+// ════════════════════════════════════════════════════════════════
+// SCORING
+// ════════════════════════════════════════════════════════════════
+function calculateScore() {
+  const assessment = ASSESSMENTS[state.role];
+  let correct = 0, total = 0;
+  assessment.questions.forEach((q, idx) => {
+    if (q.type === 'writing') return;
+    total++;
+    if (state.answers[idx] === q.correct) correct++;
+  });
+  const pct = Math.round((correct / total) * 100);
+  const writtenAnswers = assessment.questions
+    .map((q, idx) => q.type === 'writing' ? { idx, q, answer: state.answers[idx] || "" } : null)
+    .filter(Boolean);
+  return { correct, total, pct, writtenAnswers };
+}
+
+function getScoreLabel(pct) {
+  if (pct >= 85) return { label: "Strong", color: "#1A6B3C", desc: "Candidate demonstrates solid job-relevant competency. Proceed to Interview 1." };
+  if (pct >= 70) return { label: "Acceptable", color: "#2A7A7A", desc: "Candidate meets the basic threshold. Review written answers carefully. Proceed with Interview 1 noting areas to explore." };
+  if (pct >= 55) return { label: "Below Threshold", color: "#C47A15", desc: "Candidate shows gaps in key competency areas. Jackson should review carefully. Consider whether gaps are trainable before proceeding." };
+  return { label: "Significant Concern", color: "#B83232", desc: "Multiple competency gaps identified. Jackson must review all incorrect answers — especially safeguarding questions — before any interview decision." };
+}
+
+// ════════════════════════════════════════════════════════════════
+// SUBMIT RESULTS TO GOOGLE SHEETS
+// Automatically saves to Safe Haven Assessment Results 2026
+// Sheet ID: 1SwktFY4k6xwIoV4837pFzZce9TTlQ_05nx6vEvZjvvw
+// Amy and Jackson see results instantly
+// ════════════════════════════════════════════════════════════════
+
+// Applicant name collected at start
+let applicantName = "";
+let applicantEmail = "";
+
+async function emailResults() {
+  const assessment = ASSESSMENTS[state.role];
+  const { correct, total, pct, writtenAnswers } = calculateScore();
+  const { label, desc } = getScoreLabel(pct);
+  const timeUsed = assessment.totalMinutes * 60 - state.secondsLeft;
+  const minsUsed = Math.floor(timeUsed / 60);
+  const secsUsed = timeUsed % 60;
+  const timestamp = new Date().toLocaleString('en-PH', {timeZone:'Asia/Manila'});
+
+  // Check for HR flags
+  const flaggedQs = assessment.questions
+    .map((q, idx) => {
+      if (q.type === 'writing') return null;
+      if (q.hrFlag && state.answers[idx] !== q.correct) return q.hrFlag;
+      return null;
+    })
+    .filter(Boolean);
+
+  // Build written answers summary
+  const writtenSummary = writtenAnswers.map(w =>
+    `Q${w.idx+1}: ${w.answer || 'No answer'}`
+  ).join(' || ');
+
+  // Build wrong answers summary  
+  const wrongSummary = assessment.questions
+    .map((q, idx) => {
+      if (q.type === 'writing') return null;
+      if (state.answers[idx] !== q.correct) {
+        return `Q${idx+1} WRONG: chose "${q.choices[state.answers[idx]] || 'none'}" correct was "${q.choices[q.correct]}"`;
+      }
+      return null;
+    })
+    .filter(Boolean)
+    .join(' | ');
+
+  // All individual answers for full review
+  const allAnswers = assessment.questions.map((q, idx) => {
+    if (q.type === 'writing') return `[WRITTEN Q${idx+1}]: ${state.answers[idx] || 'No answer'}`;
+    const chosen = q.choices[state.answers[idx]] || 'No answer';
+    const isCorrect = state.answers[idx] === q.correct;
+    return `[Q${idx+1} ${isCorrect ? '✓' : '✗'}]: ${chosen}`;
+  }).join(' | ');
+
+  // Submit to Google Sheets via Apps Script Web App
+  const scriptUrl = 'https://script.google.com/macros/s/AKfycbxit4sr4YQN2P6xwvc5rHFhTf-1YPGdJsYHxyejAY3zgXNWgk-Nz00fS0aq6fba5EiRoQ/exec';
+  
+  const data = {
+    timestamp: timestamp,
+    name: applicantName || 'Not provided',
+    email: applicantEmail || 'Not provided',
+    role: assessment.role,
+    score_pct: pct,
+    score_label: label,
+    correct: correct,
+    total: total,
+    time_used: minsUsed + 'm ' + secsUsed + 's',
+    hr_flags: flaggedQs.length > 0 ? flaggedQs.join(' | ') : 'None',
+    recommendation: desc,
+    written_answers: writtenSummary,
+    wrong_answers: wrongSummary || 'None',
+    all_answers: allAnswers,
+    sheet_id: '1SwktFY4k6xwIoV4837pFzZce9TTlQ_05nx6vEvZjvvw'
+  };
+
+  try {
+    await fetch(scriptUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    console.log('Results submitted to Google Sheets');
+    return true;
+  } catch(e) {
+    console.error('Sheet submission failed:', e);
+    return false;
+  }
+}
+
+
+// ════════════════════════════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════════════════════════════
+function render() {
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+  switch (state.screen) {
+    case 'role': app.innerHTML = renderRoleSelect(); break;
+    case 'intro': app.innerHTML = renderIntro(); break;
+    case 'question': app.innerHTML = renderQuestion(); break;
+    case 'results': app.innerHTML = renderResults(); break;
+    case 'timeout': app.innerHTML = renderTimeout(); break;
+  }
+  attachHandlers();
+  if (state.screen === 'question') updateTimerDisplay();
+}
+
+function renderRoleSelect() {
+  return `
+  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--cream)">
+    <div style="background:var(--white);border-radius:20px;padding:36px 32px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.1);text-align:center">
+      <div style="width:56px;height:56px;background:var(--teal);border-radius:14px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:26px">🏠</div>
+      <div style="font-size:20px;font-weight:800;color:var(--navy);margin-bottom:6px">Safe Haven Aptitude Assessment</div>
+      <div style="font-size:13px;color:var(--gray);margin-bottom:24px;line-height:1.7">A short, focused competency assessment for applicants. Select your role to begin.</div>
+      <div class="role-grid">
+        <div class="role-btn" onclick="selectRole('houseparent')">
+          <span class="ri">🏠</span>
+          <div class="rl">House Parent</div>
+          <div class="rs">18 minutes · Judgment, writing, numeracy</div>
+        </div>
+        <div class="role-btn" onclick="selectRole('socialworker')">
+          <span class="ri">👩‍💼</span>
+          <div class="rl">Social Worker / RSW</div>
+          <div class="rs">20 minutes · Case reasoning, documentation, ethics</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--gray);margin-top:16px;line-height:1.6">
+        All answers are kept confidential and reviewed only by Safe Haven HR and the Executive Director.<br>
+        Information handled under the Data Privacy Act (RA 10173).
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderIntro() {
+  const a = ASSESSMENTS[state.role];
+  const sections = a.intro.sections.map((s, i) => `
+    <li><div class="s-num">${i+1}</div>
+    <div><strong>${s.name}</strong> — ${s.desc}<br>
+    <span style="font-size:11px;color:var(--gray)">${s.qs} question${s.qs>1?'s':''} · ~${s.mins} min</span></div></li>`).join('');
+  const instrs = a.intro.instructions.map(i => `<li style="padding:5px 0;display:flex;gap:8px;font-size:13px;color:var(--dark)"><span style="color:var(--teal)">›</span>${i}</li>`).join('');
+  return `
+  <div class="hdr">
+    <div class="hdr-top">
+      <div class="hdr-logo">${a.icon}</div>
+      <div><div class="hdr-title">${a.intro.title}</div><div class="hdr-sub">Safe Haven Children's Home Foundation, Inc.</div></div>
+    </div>
+  </div>
+  <div class="intro-screen">
+    <div class="intro-card">
+      <div class="intro-icon">${a.icon}</div>
+      <div class="intro-title">${a.intro.title}</div>
+      <div class="intro-sub">${a.intro.description}</div>
+      <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:10px;letter-spacing:0.5px">WHAT YOU WILL COMPLETE</div>
+      <ul class="section-list">${sections}</ul>
+      <div style="margin-top:18px;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:10px;letter-spacing:0.5px">IMPORTANT INSTRUCTIONS</div>
+      <ul style="list-style:none;padding:0">${instrs}</ul>
+      <div class="warn-box" style="margin-top:16px">
+        <strong>⏱ Once you click Start, the timer begins and cannot be paused.</strong> Make sure you are in a quiet place and have ${a.totalMinutes} minutes available before starting.
+      </div>
+      <div style="margin-bottom:16px">
+        <div style="font-size:12px;font-weight:700;color:#1B2B4B;margin-bottom:6px">Your Full Name <span style="color:#B83232">*</span></div>
+        <input type="text" id="applicant-name" placeholder="Enter your full name"
+          style="width:100%;padding:11px 14px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;margin-bottom:10px">
+        <div style="font-size:12px;font-weight:700;color:#1B2B4B;margin-bottom:6px">Email or Mobile Number <span style="color:#B83232">*</span></div>
+        <input type="text" id="applicant-contact" placeholder="So HR can reach you about your results"
+          style="width:100%;padding:11px 14px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box">
+        <div style="font-size:11px;color:#6B7280;margin-top:5px;line-height:1.5">Your results are automatically sent to Safe Haven HR when you finish. They will contact you within 3-5 business days.</div>
+      </div>
+      <button class="start-btn" onclick="startWithName()">Start Assessment — ${a.totalMinutes} Minutes →</button>
+    </div>
+  </div>`;
+}
+
+function renderQuestion() {
+  const a = ASSESSMENTS[state.role];
+  const q = a.questions[state.currentQ];
+  const total = a.questions.length;
+  const dots = a.questions.map((_, i) => {
+    let cls = 'dot';
+    if (i < state.currentQ) cls += ' done';
+    else if (i === state.currentQ) cls += ' current';
+    return `<div class="${cls}"></div>`;
+  }).join('');
+
+  let qContent = '';
+
+  if (q.scenario) {
+    qContent += `<div class="scenario"><strong>SCENARIO:</strong><br>${q.scenario}</div>`;
+  }
+
+  if (q.type === 'reading_mc' || q.type === 'mc') {
+    const choices = q.choices.map((c, i) => `
+      <label class="choice">
+        <input type="radio" name="q${state.currentQ}" value="${i}" ${state.answers[state.currentQ] === i ? 'checked' : ''}>
+        <span>${c}</span>
+      </label>`).join('');
+    qContent += `<div class="choice-list">${choices}</div>`;
+  } else if (q.type === 'writing') {
+    const wordCount = (state.answers[state.currentQ] || '').split(/\s+/).filter(Boolean).length;
+    const minOk = wordCount >= q.minWords;
+    qContent += `
+      <div class="write-prompt">📝 ${q.prompt}</div>
+      <div class="warn-box" style="margin-bottom:12px"><strong>Guidance:</strong> ${q.guidance}</div>
+      <textarea class="write-area" id="writing-answer" placeholder="Write your answer here...">${state.answers[state.currentQ] || ''}</textarea>
+      <div class="word-count" id="word-count">${wordCount} words ${minOk ? '✓' : `(minimum ${q.minWords})`}</div>`;
+  }
+
+  const pct = Math.round((state.currentQ / total) * 100);
+  const answered = state.answers[state.currentQ] !== undefined;
+  const isWriting = q.type === 'writing';
+  const writingOk = isWriting && (state.answers[state.currentQ] || '').split(/\s+/).filter(Boolean).length >= q.minWords;
+  const canNext = isWriting ? writingOk : answered;
+
+  return `
+  <div class="hdr">
+    <div class="hdr-top">
+      <div class="hdr-logo">${ASSESSMENTS[state.role].icon}</div>
+      <div style="flex:1"><div class="hdr-title">${q.section}</div><div class="hdr-sub">${ASSESSMENTS[state.role].role} Assessment · Question ${state.currentQ + 1} of ${total}</div></div>
+      <div class="timer-pill" id="timer-display">⏱ ${formatTime(state.secondsLeft)}</div>
+    </div>
+    <div class="hdr-meta">
+      <div class="prog-wrap"><div class="prog-bar" style="width:${pct}%"></div></div>
+      <span style="color:rgba(255,255,255,0.6);font-size:11px;flex-shrink:0">${state.currentQ + 1} / ${total}</span>
+    </div>
+  </div>
+  <div class="q-screen">
+    <div class="section-badge">${q.section}</div>
+    <div class="q-card">
+      <div class="q-head">
+        <div class="q-num">QUESTION ${state.currentQ + 1} OF ${total}</div>
+        <div class="q-text">${q.question}</div>
+        ${q.context ? `<div class="q-context">${q.context}</div>` : ''}
+      </div>
+      <div class="q-body">${qContent}</div>
+    </div>
+    <div class="q-nav">
+      <button class="nav-btn nav-prev" onclick="prevQ()" ${state.currentQ === 0 ? 'disabled' : ''}>← Back</button>
+      <div class="q-dots">${dots}</div>
+      <button class="nav-btn nav-next" onclick="nextQ()" ${!canNext ? 'disabled' : ''}>
+        ${state.currentQ === total - 1 ? 'Submit Assessment ✓' : 'Next →'}
+      </button>
+    </div>
+  </div>`;
+}
+
+function renderResults() {
+  const a = ASSESSMENTS[state.role];
+  const { correct, total, pct, writtenAnswers } = calculateScore();
+  const { label, color, desc } = getScoreLabel(pct);
+  const timeUsed = a.totalMinutes * 60 - state.secondsLeft;
+  const minsUsed = Math.floor(timeUsed / 60);
+  const secsUsed = timeUsed % 60;
+
+  const hasHRFlags = a.questions.some((q, idx) =>
+    q.hrFlag && q.type !== 'writing' && state.answers[idx] !== q.correct
+  );
+
+  const reviewCards = a.questions.map((q, idx) => {
+    if (q.type === 'writing') {
+      const ans = state.answers[idx] || '';
+      const wc = ans.split(/\s+/).filter(Boolean).length;
+      return `
+      <div class="review-card">
+        <div class="review-head" style="background:#F9FAFB">
+          <span style="font-size:13px;font-weight:700;color:var(--navy)">${q.section} — Writing Question</span>
+          <span style="font-size:12px;color:var(--teal);font-weight:600">HR REVIEW REQUIRED</span>
+        </div>
+        <div class="review-body">
+          <div style="font-size:13px;font-weight:600;color:var(--dark);margin-bottom:8px">${q.question.substring(0,120)}...</div>
+          <div class="written-ans">${ans || '<em style="color:var(--gray)">No answer provided.</em>'}</div>
+          <div style="font-size:11px;color:var(--gray);margin-top:6px">Word count: ${wc}</div>
+          <div style="margin-top:10px;font-size:11px;font-weight:700;color:var(--amber)">HR REVIEW FLAGS TO CHECK:</div>
+          ${q.hrFlags.map(f => `<div style="font-size:11px;color:var(--amber);padding:3px 0;display:flex;gap:6px"><span>⚠️</span>${f}</div>`).join('')}
+        </div>
+      </div>`;
+    }
+    const correct_ans = state.answers[idx] === q.correct;
+    return `
+    <div class="review-card">
+      <div class="review-head" style="background:${correct_ans ? '#ECFDF5' : '#FEF2F2'}">
+        <span style="font-size:12px;font-weight:700;color:var(--dark)">Q${idx + 1}: ${q.question.substring(0, 80)}${q.question.length > 80 ? '...' : ''}</span>
+        <span style="font-size:12px;font-weight:700;color:${correct_ans ? 'var(--green)' : 'var(--red)'}">${correct_ans ? '✓ Correct' : '✗ Incorrect'}</span>
+      </div>
+      <div class="review-body">
+        ${!correct_ans ? `
+        <div class="wrong-ans">Applicant chose: <strong>${q.choices[state.answers[idx]] || 'No answer'}</strong></div>
+        <div class="correct-ans">Correct answer: <strong>${q.choices[q.correct]}</strong></div>` : ''}
+        <div style="font-size:12px;color:var(--dark);margin-top:8px;line-height:1.6"><strong>Why:</strong> ${q.explanation}</div>
+        ${q.hrFlag && !correct_ans ? `<div class="flag-box">🚨 HR FLAG: ${q.hrFlag}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  return `
+  <div class="hdr">
+    <div class="hdr-top">
+      <div class="hdr-logo">📊</div>
+      <div><div class="hdr-title">Assessment Complete — ${a.role}</div><div class="hdr-sub">Safe Haven Children's Home Foundation, Inc.</div></div>
+    </div>
+  </div>
+  <div class="results-screen">
+    <div class="result-header">
+      <div style="font-size:13px;opacity:0.8;letter-spacing:0.5px">ASSESSMENT RESULT</div>
+      <div class="result-score" style="color:${color}">${pct}%</div>
+      <div class="result-label" style="color:${color}">${label}</div>
+      <div class="result-sub">${desc}</div>
+    </div>
+    <div class="result-grid">
+      <div class="result-stat"><div class="stat-num">${correct}/${total}</div><div class="stat-lbl">MC Correct</div></div>
+      <div class="result-stat"><div class="stat-num">${pct}%</div><div class="stat-lbl">MC Score</div></div>
+      <div class="result-stat"><div class="stat-num">${minsUsed}m ${secsUsed}s</div><div class="stat-lbl">Time Used</div></div>
+      <div class="result-stat"><div class="stat-num" style="color:${hasHRFlags?'var(--red)':'var(--green)'}">${hasHRFlags?'⚠️ Yes':'✓ None'}</div><div class="stat-lbl">HR Flags</div></div>
+    </div>
+    ${hasHRFlags ? `<div style="background:var(--redL);border-left:4px solid var(--red);border-radius:0 10px 10px 0;padding:12px 16px;margin-bottom:16px;font-size:13px;color:var(--dark)"><strong>🚨 HR Flags Detected.</strong> One or more answers suggest a potential child-safety concern. Jackson must review the flagged answers below before making any interview decision. Escalate to the Executive Director if any safeguarding flag is present.</div>` : ''}
+    <div style="background:#ECFDF5;border:1px solid #1A6B3C44;border-radius:10px;padding:14px 16px;margin-bottom:16px;font-size:13px;color:#1A6B3C;display:flex;gap:8px;align-items:flex-start">
+      <span>✅</span>
+      <div><strong>Results automatically emailed</strong> to Amy and Jackson at Safe Haven HR. They will review your results and contact you within 3–5 business days.</div>
+    </div>
+    <div class="hr-note" style="margin-bottom:20px">
+      <strong>📋 For HR (Jackson) — How to Use This Result:</strong><br><br>
+      <strong>MC Score (${pct}%):</strong> This is an objective competency indicator. Use it as one data point alongside the pre-screen written responses, reference checks, and interviews.<br><br>
+      <strong>Written Answer:</strong> The writing section requires human review — it cannot be automatically scored. Evaluate it for clarity, specificity, professional language, and whether the applicant used the child's actual words in quotes.<br><br>
+      <strong>HR Flags:</strong> Any question marked as an HR flag — especially safeguarding-related wrong answers — must be reviewed carefully. A wrong answer on a safeguarding question is more significant than a wrong answer on a numeracy question.<br><br>
+      <strong>This assessment is one input among many.</strong> It does not replace interviews, reference checks, or the ED's final decision.
+    </div>
+    <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:14px">Full Review — Every Question</div>
+    ${reviewCards}
+  </div>`;
+}
+
+function renderTimeout() {
+  const a = ASSESSMENTS[state.role];
+  const { correct, total, pct } = calculateScore();
+  return `
+  <div class="hdr"><div class="hdr-top"><div class="hdr-logo">⏰</div><div><div class="hdr-title">Time's Up</div><div class="hdr-sub">${a.role} Assessment</div></div></div></div>
+  <div class="timeout-screen">
+    <div class="timeout-icon">⏰</div>
+    <div style="font-size:20px;font-weight:800;color:var(--navy);margin-bottom:10px">Time Limit Reached</div>
+    <div style="font-size:13px;color:var(--gray);line-height:1.7;max-width:400px;margin:0 auto 24px">
+      The ${a.totalMinutes}-minute time limit has been reached. Answers recorded up to this point have been saved. Safe Haven HR will review your results.
+    </div>
+    <div style="background:var(--white);border-radius:14px;padding:20px;border:1px solid var(--grayL);margin-bottom:20px;text-align:center">
+      <div style="font-size:32px;font-weight:800;color:var(--navy)">${correct}/${total}</div>
+      <div style="font-size:13px;color:var(--gray);margin-top:4px">Questions answered correctly (MC)</div>
+    </div>
+    <div style="font-size:13px;color:var(--gray)">Safe Haven HR will contact you via Messenger or the number you provided.</div>
+  </div>`;
+}
+
+// ════════════════════════════════════════════════════════════════
+// HANDLERS
+// ════════════════════════════════════════════════════════════════
+function attachHandlers() {
+  // Radio changes
+  document.querySelectorAll('input[type=radio]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      state.answers[state.currentQ] = parseInt(e.target.value);
+      updateNextBtn();
+    });
+  });
+
+  // Textarea changes
+  const ta = document.getElementById('writing-answer');
+  if (ta) {
+    ta.addEventListener('input', (e) => {
+      state.answers[state.currentQ] = e.target.value;
+      const wc = e.target.value.split(/\s+/).filter(Boolean).length;
+      const minW = ASSESSMENTS[state.role].questions[state.currentQ].minWords;
+      const wcel = document.getElementById('word-count');
+      if (wcel) wcel.textContent = `${wc} words ${wc >= minW ? '✓' : `(minimum ${minW})`}`;
+      updateNextBtn();
+    });
+  }
+}
+
+function updateNextBtn() {
+  const btn = document.querySelector('.nav-next');
+  if (!btn) return;
+  const q = ASSESSMENTS[state.role].questions[state.currentQ];
+  const isWriting = q.type === 'writing';
+  const writingOk = isWriting && (state.answers[state.currentQ] || '').split(/\s+/).filter(Boolean).length >= q.minWords;
+  const answered = state.answers[state.currentQ] !== undefined;
+  btn.disabled = isWriting ? !writingOk : !answered;
+}
+
+function selectRole(role) {
+  state.role = role;
+  state.screen = 'intro';
+  render();
+}
+
+function startWithName() {
+  const nameEl = document.getElementById('applicant-name');
+  const contactEl = document.getElementById('applicant-contact');
+  if (!nameEl || !nameEl.value.trim()) {
+    alert('Please enter your full name before starting.');
+    return;
+  }
+  applicantName = nameEl.value.trim();
+  applicantEmail = contactEl ? contactEl.value.trim() : '';
+  startAssessment();
+}
+
+function startAssessment() {
+  state.screen = 'question';
+  state.currentQ = 0;
+  state.answers = {};
+  render();
+  startTimer(ASSESSMENTS[state.role].totalMinutes);
+}
+
+function nextQ() {
+  const total = ASSESSMENTS[state.role].questions.length;
+  if (state.currentQ < total - 1) {
+    state.currentQ++;
+    render();
+  } else {
+    clearInterval(state.timerInterval);
+    state.screen = 'results';
+    render();
+    // Email results automatically to Amy and Jackson
+    emailResults();
+  }
+}
+
+function prevQ() {
+  if (state.currentQ > 0) {
+    state.currentQ--;
+    render();
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// BOOT
+// ════════════════════════════════════════════════════════════════
+render();
+</script>
+</body>
+</html>

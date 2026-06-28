@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Safe Haven — HR System</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #F7F4EE; min-height: 100vh; }
+  .header { background: #1B2B4B; padding: 28px 32px 24px; }
+  .hi { max-width: 960px; margin: 0 auto; display: flex; align-items: center; gap: 16px; }
+  .logo { width: 52px; height: 52px; background: #2A7A7A; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; }
+  .org { color: #fff; font-weight: 800; font-size: 18px; }
+  .org-sub { color: #3AADAD; font-size: 11px; margin-top: 3px; letter-spacing: 0.5px; }
+  .tags { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  .tag { background: rgba(255,255,255,0.13); color: #fff; border-radius: 20px; padding: 3px 12px; font-size: 10px; font-weight: 700; }
+  .main { max-width: 960px; margin: 0 auto; padding: 32px 20px; }
+  .sl { font-size: 10px; font-weight: 700; color: #6B7280; letter-spacing: 1px; margin-bottom: 14px; margin-top: 28px; }
+  .sl:first-child { margin-top: 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+  .card { background: #fff; border-radius: 14px; border: 1px solid #E5E7EB; padding: 22px 20px; cursor: pointer; transition: all 0.15s; }
+  .card:hover { border-color: #2A7A7A; box-shadow: 0 6px 20px rgba(42,122,122,0.12); transform: translateY(-2px); }
+  .ci { font-size: 30px; margin-bottom: 10px; }
+  .ct { font-size: 15px; font-weight: 800; color: #1B2B4B; margin-bottom: 5px; }
+  .cd { font-size: 12px; color: #6B7280; line-height: 1.6; margin-bottom: 10px; }
+  .ctags { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 14px; }
+  .ctag { font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 4px; letter-spacing: 0.4px; }
+  .btn { display: inline-flex; align-items: center; gap: 5px; background: #2A7A7A; color: #fff; border-radius: 8px; padding: 7px 14px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; margin-right: 6px; transition: background 0.15s; }
+  .btn:hover { background: #1B2B4B; }
+  .btn.gold { background: #C8941A; }
+  .btn.green { background: #1A6B3C; }
+  .btn.red { background: #B83232; }
+  .ref-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 8px; }
+  .ref-card { background: #fff; border-radius: 10px; padding: 14px; border: 1px solid #E5E7EB; }
+  .ri { font-size: 20px; margin-bottom: 6px; }
+  .rt { font-size: 12px; font-weight: 700; color: #1B2B4B; margin-bottom: 4px; }
+  .rd { font-size: 11px; color: #6B7280; line-height: 1.6; }
+  .notice { background: #1B2B4B; border-radius: 12px; padding: 18px 20px; margin-top: 32px; font-size: 12px; color: rgba(255,255,255,0.7); line-height: 1.8; }
+  .notice strong { color: #3AADAD; }
+  @media (max-width: 600px) { .grid, .ref-grid { grid-template-columns: 1fr; } .header { padding: 20px; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="hi">
+    <div class="logo">&#127968;</div>
+    <div>
+      <div class="org">A Safe Haven Children&apos;s Home Foundation, Inc.</div>
+      <div class="org-sub">HUMAN RESOURCE MANAGEMENT SYSTEM &middot; DAVAO CITY, PHILIPPINES</div>
+      <div class="tags">
+        <span class="tag">DOLE Compliant</span>
+        <span class="tag">DSWD AO 16</span>
+        <span class="tag">NACC / RACCO</span>
+        <span class="tag">Sprouts PH</span>
+        <span class="tag">RA 10173</span>
+        <span class="tag">Phase 1</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="sl">MAIN TOOLS &mdash; JACKSON &amp; HR</div>
+  <div class="grid" style="margin-bottom:8px">
+
+    <div class="card" onclick="go('hr-system.html')">
+      <div class="ci">&#127968;</div>
+      <div class="ct">Complete HR System</div>
+      <div class="cd">Full lifecycle &mdash; recruitment, onboarding, records, performance, training, discipline, exit. Dashboard with live compliance alerts and AI HR Assistant built in.</div>
+      <div class="ctags">
+        <span class="ctag" style="background:#EEF1F8;color:#1B2B4B">All Modules</span>
+        <span class="ctag" style="background:#EEF8F8;color:#2A7A7A">DOLE &middot; DSWD</span>
+        <span class="ctag" style="background:#EEF8F8;color:#2A7A7A">AI Assistant</span>
+      </div>
+      <button class="btn" onclick="event.stopPropagation();go('hr-system.html')">Open HR System &rarr;</button>
+    </div>
+
+    <div class="card" onclick="go('screening.html')">
+      <div class="ci">&#128269;</div>
+      <div class="ct">Internal Screening System</div>
+      <div class="cd">Role-specific interview tool for Jackson and supervisors. All 5 roles with DSWD/NACC/RACCO compliance, Panel 1 (HR) and Panel 2 (Supervisor), scoring, and decision workflow.</div>
+      <div class="ctags">
+        <span class="ctag" style="background:#FEF2F2;color:#B83232">Child-Safe</span>
+        <span class="ctag" style="background:#EEF1F8;color:#1B2B4B">5 Roles</span>
+        <span class="ctag" style="background:#EEF8F8;color:#2A7A7A">Panel 1 + 2</span>
+      </div>
+      <button class="btn" onclick="event.stopPropagation();go('screening.html')">Open Screener &rarr;</button>
+    </div>
+
+    <div class="card" onclick="go('portal.html')">
+      <div class="ci">&#128100;</div>
+      <div class="ct">Staff Portal</div>
+      <div class="cd">Password-protected portal for Safe Haven employees. Live SIL balance, HR chatbot for policy questions, leave request links, payslips, and Google Drive documents.</div>
+      <div class="ctags">
+        <span class="ctag" style="background:#ECFDF5;color:#1A6B3C">Staff Access</span>
+        <span class="ctag" style="background:#EEF8F8;color:#2A7A7A">AI Chatbot</span>
+        <span class="ctag" style="background:#EEF8F8;color:#2A7A7A">SIL Balance</span>
+      </div>
+      <button class="btn green" onclick="event.stopPropagation();go('portal.html')">Open Staff Portal &rarr;</button>
+    </div>
+
+  </div>
+
+  <div class="sl">APPLICANT TOOLS &mdash; SEND LINK VIA MESSENGER</div>
+  <div class="grid" style="margin-bottom:8px">
+
+    <div class="card" onclick="go('apply.html')">
+      <div class="ci">&#128203;</div>
+      <div class="ct">Applicant Pre-Screen Form</div>
+      <div class="cd">Send this link to anyone who applies via Messenger or Facebook. Applicant selects their role and answers role-specific screening questions including child safeguarding and boundary scenarios. Works on any phone.</div>
+      <div class="ctags">
+        <span class="ctag" style="background:#FEF2F2;color:#B83232">All 5 Roles</span>
+        <span class="ctag" style="background:#FEF6E4;color:#C47A15">Applicant Fills</span>
+        <span class="ctag" style="background:#EEF8F8;color:#2A7A7A">Mobile Friendly</span>
+      </div>
+      <button class="btn gold" onclick="event.stopPropagation();copyLink('apply.html')">&#128203; Copy Messenger Link</button>
+      <button class="btn" onclick="event.stopPropagation();go('apply.html')">Preview &rarr;</button>
+    </div>
+
+    <div class="card" onclick="go('assessment.html')">
+      <div class="ci">&#128221;</div>
+      <div class="ct">Aptitude Assessment</div>
+      <div class="cd">Send after pre-screen passes. Timed competency test &mdash; House Parent (18 min) and Social Worker (20 min). Real job scenarios: reading comprehension, incident note writing, situational judgment, numeracy.</div>
+      <div class="ctags">
+        <span class="ctag" style="background:#EEF1F8;color:#1B2B4B">Timed</span>
+        <span class="ctag" style="background:#EEF8F8;color:#2A7A7A">2 Roles</span>
+        <span class="ctag" style="background:#ECFDF5;color:#1A6B3C">Auto-Scored</span>
+      </div>
+      <button class="btn gold" onclick="event.stopPropagation();copyLink('assessment.html')">&#128203; Copy Messenger Link</button>
+      <button class="btn" onclick="event.stopPropagation();go('assessment.html')">Preview &rarr;</button>
+    </div>
+
+  </div>
+
+  <div class="sl">QUICK REFERENCE</div>
+  <div class="ref-grid">
+    <div class="ref-card">
+      <div class="ri">&#128197;</div>
+      <div class="rt">Hiring Flow</div>
+      <div class="rd">Messenger apply &rarr; Pre-screen form &rarr; Aptitude test &rarr; AI screen &rarr; Interview 1 (HR) &rarr; Interview 2 (Supervisor) &rarr; References &rarr; Offer &rarr; Onboard</div>
+    </div>
+    <div class="ref-card">
+      <div class="ri">&#9203;</div>
+      <div class="rt">DOLE Key Deadlines</div>
+      <div class="rd">Day 30 / 60 / 90 evaluations. Month 5 decision before Day 180 &mdash; ABSOLUTE deadline. Final pay within 30 days. COE within 3 business days.</div>
+    </div>
+    <div class="ref-card">
+      <div class="ri">&#128737;</div>
+      <div class="rt">DSWD Hard Blocks</div>
+      <div class="rd">NBI Clearance verified before deployment. Child Protection Policy signed Day 1. Child Protection Training before child contact. No exceptions.</div>
+    </div>
+    <div class="ref-card">
+      <div class="ri">&#128200;</div>
+      <div class="rt">SIL Schedule</div>
+      <div class="rd">1yr = 5 days &bull; 2yr = 6 &bull; 3yr = 7 &bull; 4yr = 8 &bull; 5yr = 9 &bull; 6yr+ = 10. Clock from hire date. Unused converts to cash on anniversary.</div>
+    </div>
+    <div class="ref-card">
+      <div class="ri">&#128187;</div>
+      <div class="rt">Sprouts PH</div>
+      <div class="rd">Payroll and timekeeping stay in Sprouts. Sync weekly. Update employee status in Sprouts immediately when it changes here.</div>
+    </div>
+    <div class="ref-card">
+      <div class="ri">&#128193;</div>
+      <div class="rt">Google Drive</div>
+      <div class="rd">201 files, training certificates, signed acknowledgments. Link employee folders in HR System &rarr; Settings. Weekly mismatch check.</div>
+    </div>
+  </div>
+
+  <div class="notice">
+    <strong>Phase 1 &mdash; Google Drive Data Layer.</strong> Data is stored in Google Drive and Google Sheets. Nothing is lost &mdash; everything important gets filed in Drive immediately. <strong>Phase 2</strong> adds a real database (Supabase), supervisor logins, and automated email reminders &mdash; built on top of this exact system in future Claude sessions.<br><br>
+    &#9888;&#65039; All legal requirements, payroll calculations, and compliance decisions must be verified by a qualified Philippine HR professional or labor lawyer before production use. DOLE &middot; DSWD &middot; NACC/RACCO &middot; RA 10173 &middot; RA 11313.
+  </div>
+
+</div>
+
+<script>
+function go(page) { window.location.href = page; }
+function copyLink(page) {
+  var base = window.location.href.replace(/index\.html.*/, '').replace(/\/$/, '');
+  var url = base + '/' + page;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(function() {
+      alert('Link copied!\n\nPaste this into Messenger:\n\n' + url);
+    });
+  } else {
+    prompt('Copy this link and paste into Messenger:', url);
+  }
+}
+</script>
+</body>
+</html>

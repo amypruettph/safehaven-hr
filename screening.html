@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Safe Haven Screening System</title>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const {useState,useEffect,useRef,useCallback}=React;
+
+const C = {
+  navy:"#1B2B4B", navyMid:"#243660", teal:"#2A7A7A", teal2:"#3AADAD",
+  gold:"#C8941A", cream:"#F7F4EE", white:"#FFFFFF", red:"#B83232",
+  redL:"#FDEAEA", green:"#1A6B3C", greenL:"#EAFAF1",
+  amber:"#C47A15", amberL:"#FEF6E4", gray:"#6B7280", grayL:"#E5E7EB", dark:"#374151",
+};
+
+// ── ROLE DEFINITIONS ─────────────────────────────────────────────────────────
+// Each role has:
+//   dswd_requirements: hard compliance checks from DSWD AO 16 / NACC / RACCO
+//   hard_disqualifiers: auto-stop conditions
+//   interview1_questions: HR/values panel
+//   interview2_questions: technical/program panel
+//   interview2_panel: who leads Panel 2
+//   201_requirements: what must be in the file before offer
+// ─────────────────────────────────────────────────────────────────────────────
+
+const ROLES = {
+  houseparent: {
+    id: "houseparent",
+    label: "House Parent",
+    subtitle: "Level 1 / Level 2 / Provisional Level 2",
+    icon: "🏠",
+    color: C.navy,
+    moo_qualifications: "Ministry/counseling training preferred. Prior caregiving experience preferred. Degree considered but not required. Supervisor: Admin Supervisor.",
+    dswd_requirements: [
+      { req: "NBI Clearance (current)", basis: "DSWD AO 16 s.2004 — mandatory for all residential care staff", hard: true },
+      { req: "Barangay Clearance (current)", basis: "MOO safe recruitment; DSWD AO 16", hard: true },
+      { req: "Medical Certificate / Fit-to-Work", basis: "DSWD AO 16 s.2004; MOO", hard: true },
+      { req: "Two documented reference checks", basis: "MOO child-safe recruitment; DSWD best practice", hard: true },
+      { req: "Child Protection Policy signed before deployment", basis: "DSWD CPP; MOO — hard block", hard: true },
+      { req: "Diploma / TC (if Level 2 via Pathway A)", basis: "MOO Appendix 15-A — degree required for external Level 2 hire", hard: false },
+      { req: "Ministry/counseling training credentials (preferred)", basis: "MOO House Parent qualifications", hard: false },
+    ],
+    hard_disqualifiers: [
+      "Any indication physical punishment of children is acceptable",
+      "Unwillingness to provide NBI Clearance",
+      "History of dismissal related to child welfare or conduct",
+      "Unwillingness to sign Child Protection Policy",
+      "Any criminal record involving children, violence, or drugs",
+      "Level 2 applicant without degree (Pathway A) who lacks 1+ year Safe Haven experience (Pathway B)",
+    ],
+    interview1_questions: [
+      { q: "Tell me what drew you specifically to Safe Haven and to living in a residential home with children.", why: "Tests genuine calling vs. job desperation. Vague answer = concern." },
+      { q: "Walk me through a time you cared for someone who was difficult or acting out. What did you do?", why: "Tests patience, non-punitive response, self-regulation." },
+      { q: "What does professional boundaries with children mean to you? Give a specific example.", why: "Critical. Must understand boundaries are non-negotiable." },
+      { q: "Have you ever been accused of anything involving a child — even if resolved? We ask everyone.", why: "Direct safeguarding question. Note reaction, not just answer." },
+      { q: "How do you take care of yourself emotionally when the work becomes very heavy?", why: "Burnout is a child-safety risk. Must have realistic self-care." },
+      { q: "You see a fellow House Parent speak harshly to a child. What do you do?", why: "Tests courage to report peers. Critical answer — must say report it." },
+      { q: "Safe Haven's values are Love, Joy, Excellence, Faithfulness, Respect. Which resonates most and why?", why: "Tests value alignment. Listen for authentic vs. performative answer." },
+      { q: "What would make you leave this job?", why: "Reveals risk factors. Tells you what might push them to act out." },
+    ],
+    interview2_panel: "Child Development Supervisor / CPO",
+    interview2_questions: [
+      { q: "A child wakes up at 2am screaming. They won't tell you why. Walk me through exactly what you do.", why: "Tests trauma response, boundaries, documentation, and escalation." },
+      { q: "A child tells you another staff member hurt them. What is your immediate response?", why: "Must say: report immediately to CPO/ED. Not investigate alone." },
+      { q: "Describe positive discipline with a 10-year-old who repeatedly hits other children.", why: "Any mention of physical punishment = hard stop." },
+      { q: "How would you help a newly arrived child feel safe in their first 3 days?", why: "Tests trauma-informed understanding of transitions." },
+      { q: "How do you document a behavioral change in a child for the social worker?", why: "Tests observation and documentation awareness." },
+      { q: "Walk me through a complete shift handover to the incoming House Parent.", why: "Tests communication and continuity of care." },
+      { q: "You feel overwhelmed and frustrated during your shift. What do you do?", why: "Self-regulation test. No child contact while dysregulated." },
+      { q: "What kind of House Parent do you want to be known as after one year here?", why: "Character and aspiration. Aligns with HP Award criteria." },
+    ],
+  },
+
+  socialworker: {
+    id: "socialworker",
+    label: "Social Worker / RSW",
+    subtitle: "Licensed Registered Social Worker required",
+    icon: "👩‍💼",
+    color: C.teal,
+    moo_qualifications: "Licensed RSW required (RA 9442). Ministry/counseling training preferred. Supervisor: Executive Director. Weekly supervision meetings.",
+    dswd_requirements: [
+      { req: "Valid PRC License (RSW) — verified before offer", basis: "RA 9442 (Social Work Act); DSWD AO 16 — unlicensed RSW practice is illegal; NACC/RACCO accreditation requirement", hard: true },
+      { req: "NBI Clearance (current)", basis: "DSWD AO 16 s.2004 — mandatory for all child-contact staff", hard: true },
+      { req: "Barangay Clearance", basis: "MOO; DSWD AO 16", hard: true },
+      { req: "Medical Certificate", basis: "DSWD AO 16; MOO", hard: true },
+      { req: "Two documented reference checks", basis: "MOO; DSWD safe recruitment", hard: true },
+      { req: "RSW caseload eligibility: max 1:20 active cases", basis: "MOO Appendix 14 — DSWD staff-to-client ratio standard", hard: false },
+      { req: "DSWD/RACCO/NACC coordination experience documented", basis: "NACC/RACCO monitoring — social work documentation evidence", hard: false },
+      { req: "Familiarity with CMIP, SCSR, and DSWD case forms", basis: "DSWD accreditation; case management compliance", hard: false },
+    ],
+    hard_disqualifiers: [
+      "No valid PRC license (RSW) — this is a legal requirement, not a preference",
+      "PRC license expired and not in renewal process",
+      "Unwillingness to provide NBI Clearance",
+      "Any criminal record involving children, exploitation, or drugs",
+      "History of ethical violation or professional complaint with PRC or DSWD",
+      "Inability to take on caseload within DSWD 1:20 ratio",
+    ],
+    interview1_questions: [
+      { q: "Walk me through how you have managed a complex case from intake to placement or reunification.", why: "Tests actual case management experience and DSWD process knowledge." },
+      { q: "How do you balance a child's stated wishes with what you professionally assess as their best interest?", why: "Core social work ethical tension. Tests professional judgment." },
+      { q: "How do you handle mandatory reporting when the subject of the report is a colleague?", why: "Critical — must know they must report regardless of relationship." },
+      { q: "Describe your experience coordinating with DSWD, RACCO, or NACC.", why: "Accreditation requires documented coordination — verify competence." },
+      { q: "How do you prevent compassion fatigue and maintain professional objectivity?", why: "Sustainability of practice. Burnout affects casework quality and child safety." },
+      { q: "What does a trauma-informed approach look like in your case documentation?", why: "Tests quality of documentation — DSWD/NACC monitoring evidence." },
+      { q: "Have you ever had a case where a child's disclosure changed the case plan entirely? What happened?", why: "Tests flexibility, child-centeredness, and safeguarding response." },
+      { q: "Why do you want to work in a residential care setting specifically?", why: "Residential care is different from community SW. Tests fit." },
+    ],
+    interview2_panel: "Executive Director",
+    interview2_questions: [
+      { q: "How would you handle a family reunification case where the child wants to go home but you assess the home as not yet safe?", why: "Tests clinical judgment and child protection priority." },
+      { q: "Describe how you would write a CMIP for a child with behavioral challenges and trauma history.", why: "DSWD/NACC documentation competency check." },
+      { q: "A foster family calls you distressed at 9pm. The child has run away. What is your protocol?", why: "Tests crisis response, documentation, and authority awareness." },
+      { q: "How would you support a child who has just experienced a failed family reintegration?", why: "Tests trauma-informed care and counseling skills." },
+      { q: "Describe how you would present a case to RACCO or NACC reviewers.", why: "Accreditation readiness — tests professional presentation competency." },
+      { q: "What is your understanding of AACCPS Standard 1.1 and how it applies to your daily work here?", why: "Tests DSWD alignment. AACCPS is Safe Haven's accreditation standard." },
+      { q: "How do you handle a child who refuses to cooperate with their case plan?", why: "Tests child-rights approach vs. authoritarian response." },
+      { q: "What would you change about how social work documentation is typically done in residential care?", why: "Tests critical thinking and professional growth mindset." },
+    ],
+  },
+
+  admin: {
+    id: "admin",
+    label: "Admin / Finance / HR",
+    subtitle: "Office and administrative support role",
+    icon: "🏢",
+    color: C.gold,
+    moo_qualifications: "Two or four-year degree preferred. Prior office experience. Supervisor: Executive Director. Meetings twice per month.",
+    dswd_requirements: [
+      { req: "NBI Clearance (current)", basis: "DSWD AO 16 s.2004 — all staff on premises of residential care facility", hard: true },
+      { req: "Barangay Clearance", basis: "MOO; DSWD AO 16", hard: true },
+      { req: "Medical Certificate", basis: "DSWD AO 16; MOO", hard: true },
+      { req: "Two documented reference checks", basis: "MOO; DSWD safe recruitment", hard: true },
+      { req: "Signed Data Privacy Consent and Confidentiality Agreement", basis: "RA 10173; MOO — admin staff handle HR, payroll, and child records", hard: true },
+      { req: "Child Protection Policy signed before starting", basis: "MOO — all staff on premises, not only direct care staff", hard: true },
+      { req: "HR/finance records confidentiality training", basis: "MOO; RA 10173 — admin handles sensitive personnel and child data", hard: false },
+    ],
+    hard_disqualifiers: [
+      "Unwillingness to provide NBI Clearance",
+      "Criminal record involving fraud, theft, or financial misconduct",
+      "Any child-related concern from background checks or references",
+      "History of confidentiality breach in prior employment",
+      "Inability to commit to the mission context of a residential children's home",
+    ],
+    interview1_questions: [
+      { q: "Describe your experience handling confidential records — HR files, financial documents, or client information.", why: "Admin handles payroll, 201 files, and indirectly touches child records." },
+      { q: "What systems or tools have you used for office administration, bookkeeping, or HR functions?", why: "Practical competency check for the actual role." },
+      { q: "How do you manage competing priorities when everything feels urgent?", why: "Tests organizational skills and composure under pressure." },
+      { q: "This is a children's home. Although you are in the office, you will be on the same premises as vulnerable children. What does that mean to you?", why: "Critical — all staff are accountable for child safety, not just caregivers." },
+      { q: "Have you ever had to refuse a request from a supervisor because it seemed ethically wrong? What happened?", why: "Tests ethical backbone — important in nonprofit finance and HR roles." },
+      { q: "How do you handle it when you make a mistake in a document or financial record?", why: "Tests honesty and process integrity." },
+      { q: "What draws you to working in a nonprofit / social welfare organization?", why: "Mission alignment — nonprofit admin burn out quickly without it." },
+      { q: "How do you protect yourself from becoming emotionally affected by the environment you work in?", why: "Secondary trauma is real even for admin staff in residential care settings." },
+    ],
+    interview2_panel: "Administrative Supervisor",
+    interview2_questions: [
+      { q: "Walk me through how you would set up and maintain a filing system for employee 201 records — both physical and digital.", why: "Tests practical HR records management competency." },
+      { q: "You discover a discrepancy in payroll calculations before payroll is released. What do you do?", why: "Tests accuracy reflex, escalation, and integrity." },
+      { q: "How would you handle a request from a department head to share an employee's salary with another employee?", why: "Tests data privacy and confidentiality judgment." },
+      { q: "You are asked to process a payment that lacks proper documentation. What do you do?", why: "Tests financial controls awareness and willingness to push back." },
+      { q: "How would you track training compliance for all staff and flag those who are behind?", why: "Relevant to DSWD accreditation readiness — admin supports HR compliance." },
+      { q: "How familiar are you with government-mandated benefits remittances — SSS, PhilHealth, Pag-IBIG?", why: "Practical payroll compliance check." },
+      { q: "Describe how you would handle an employee who frequently submits late or incomplete documents.", why: "Tests communication and process enforcement without overstepping." },
+      { q: "A staff member asks you confidentially about whether their NTE will be on their record forever. What do you say?", why: "Tests knowledge boundaries — admin must know when to refer to HR authority." },
+    ],
+  },
+
+  teacher: {
+    id: "teacher",
+    label: "Teacher / ALS Facilitator",
+    subtitle: "Education program — child-centered learning",
+    icon: "📚",
+    color: C.green,
+    moo_qualifications: "LPT license preferred for teacher role. ALS facilitation training for ALS track. Max class ratio 1:25. Education Focal for Child Protection Committee.",
+    dswd_requirements: [
+      { req: "NBI Clearance (current)", basis: "DSWD AO 16 s.2004; RA 7610 — all staff with child contact in residential care", hard: true },
+      { req: "Barangay Clearance", basis: "MOO; DSWD AO 16", hard: true },
+      { req: "Medical Certificate", basis: "DSWD AO 16; MOO", hard: true },
+      { req: "Two documented reference checks", basis: "MOO; DSWD safe recruitment — teaching is direct child contact", hard: true },
+      { req: "LPT License (for Teacher position) — verify PRC", basis: "DepEd/PRC requirement; DSWD qualification evidence in 201 file", hard: false },
+      { req: "ALS Facilitator certification or training (for ALS position)", basis: "DepEd ALS program standards; DSWD education program MOV", hard: false },
+      { req: "Teacher is Education Focal on Child Protection Committee", basis: "MOO — teacher serves on CPC; must understand CPP obligations", hard: true },
+    ],
+    hard_disqualifiers: [
+      "Unwillingness to provide NBI Clearance",
+      "Any criminal record involving children or educational misconduct",
+      "Use of physical punishment as a classroom management tool",
+      "No LPT license for teacher position (unless ALS facilitator track)",
+      "Inability or unwillingness to serve on Child Protection Committee as Education Focal",
+    ],
+    interview1_questions: [
+      { q: "Describe your teaching experience — age group, subject, and setting. What approach do you use?", why: "Baseline competency and teaching philosophy check." },
+      { q: "The children you will teach have experienced trauma, loss, and disrupted schooling. How does that change how you teach?", why: "Tests trauma-informed approach to education." },
+      { q: "A student constantly disrupts the class and refuses to cooperate. Walk me through your response.", why: "Tests classroom management — physical punishment = hard stop." },
+      { q: "A student discloses to you that they are being hurt. What is your immediate response?", why: "Teacher is a mandatory reporter. Must report immediately to CPO." },
+      { q: "How do you build trust with a child who has learned not to trust adults?", why: "Core relational competency for teaching in a trauma context." },
+      { q: "How do you measure learning progress for a child who is far below grade level?", why: "Tests flexibility and child-centered assessment approach." },
+      { q: "The teacher at Safe Haven also serves on the Child Protection Committee. What does that mean to you?", why: "Tests awareness of dual role and safeguarding responsibility." },
+      { q: "What draws you to teaching children in a residential care setting specifically?", why: "Mission fit — residential care teaching is very different from school." },
+    ],
+    interview2_panel: "Child Development Supervisor / Program Supervisor",
+    interview2_questions: [
+      { q: "Describe how you would design a learning plan for a group of children with very different educational levels.", why: "Tests differentiated instruction competency." },
+      { q: "A child refuses to come to class three days in a row. What do you do?", why: "Tests coordination with care team and safeguarding awareness." },
+      { q: "How would you adapt the curriculum for a child who cannot read at their age level due to trauma?", why: "Tests trauma-informed pedagogy." },
+      { q: "How would you document a child's educational progress for DSWD review?", why: "Tests documentation for accreditation — education is a DSWD evidence area." },
+      { q: "How would you run an ALS session for a group of children with low motivation?", why: "ALS-specific — tests facilitation skills and creative engagement." },
+      { q: "A child becomes upset and starts crying during your class. The other children are watching. What do you do?", why: "Tests in-the-moment trauma response in a group setting." },
+      { q: "How do you communicate with the social worker about a child's emotional state affecting their learning?", why: "Tests interdisciplinary care team coordination." },
+      { q: "What is your vision for what education should feel like for a child living in a residential home?", why: "Character and mission alignment — education as part of healing." },
+    ],
+  },
+
+  cook: {
+    id: "cook",
+    label: "Cook / Kitchen Staff",
+    subtitle: "Kitchen, nutrition, and food safety",
+    icon: "🍳",
+    color: C.gray,
+    moo_qualifications: "Food service experience preferred. Health card required. NCII or food safety training an advantage. Part of Admin Department under Admin Supervisor.",
+    dswd_requirements: [
+      { req: "NBI Clearance (current)", basis: "DSWD AO 16 s.2004 — all staff on premises of residential facility", hard: true },
+      { req: "Barangay Clearance", basis: "MOO; DSWD AO 16", hard: true },
+      { req: "Medical Certificate including health card", basis: "DSWD AO 16; RA 10611 (Food Safety Act) — kitchen staff must have current health card", hard: true },
+      { req: "Two documented reference checks", basis: "MOO; DSWD safe recruitment — all staff on child-care premises", hard: true },
+      { req: "Food Safety training or NCII in Food and Beverage (preferred)", basis: "RA 10611 Food Safety Act; DSWD nutrition program MOV", hard: false },
+      { req: "Child Protection Policy signed before starting", basis: "MOO — all staff regardless of child-contact level", hard: true },
+    ],
+    hard_disqualifiers: [
+      "Unwillingness to provide NBI Clearance or health card",
+      "Any criminal record involving children, drugs, or fraud",
+      "Active communicable illness without medical clearance",
+      "History of food safety violations in prior employment",
+      "Refusal to follow food allergy protocols",
+    ],
+    interview1_questions: [
+      { q: "Describe your cooking experience — where, for how many people, and what type of kitchen.", why: "Institutional kitchen experience (schools, hospitals) is especially relevant." },
+      { q: "Although you work in the kitchen, you are in a children's home. What does that mean for how you conduct yourself?", why: "All staff are accountable for child safety — not only caregivers." },
+      { q: "A child approaches you in the kitchen and wants to talk. What do you do?", why: "Tests boundary awareness — kitchen is a restricted area; child contact must be appropriate." },
+      { q: "How do you handle a situation where you are given a menu but you are missing key ingredients?", why: "Tests problem-solving and communication with supervision." },
+      { q: "What do you do if you discover that a child has a food allergy that was not communicated to you?", why: "Food allergy protocol and escalation awareness — safety critical." },
+      { q: "Have you ever had to push back on a supervisor's instruction because it didn't seem right? What happened?", why: "Tests integrity and communication of concerns." },
+      { q: "What draws you to working in an environment like this — a home for children who need special care?", why: "Mission alignment — even support staff must understand and respect the mission." },
+      { q: "How do you maintain cleanliness and food safety standards during a busy or understaffed day?", why: "Tests standards-holding under pressure." },
+    ],
+    interview2_panel: "Administrative Supervisor",
+    interview2_questions: [
+      { q: "Walk me through a full day of meal preparation — from planning to cleanup — for 30 people.", why: "Practical operational competency test for the actual role." },
+      { q: "How do you plan a weekly menu that is nutritious, within budget, and appropriate for children of different ages?", why: "Tests nutritional awareness and budget management." },
+      { q: "You are cooking and you notice one of the children looks ill or distressed. What do you do?", why: "Tests awareness of reporting obligation even from non-caregiver role." },
+      { q: "How do you handle different dietary requirements — allergies, medical diets, cultural preferences?", why: "DSWD nutrition program compliance and child-centered care." },
+      { q: "Your health card is about to expire. What do you do, and how soon?", why: "Tests self-management of compliance requirements." },
+      { q: "How do you train a new kitchen helper to maintain food safety and hygiene standards?", why: "Tests teaching and standards-setting capability." },
+      { q: "You notice food stock is being wasted or possibly taken without authorization. What do you do?", why: "Tests financial integrity and reporting of concerns." },
+      { q: "How do you make mealtimes feel like more than just food for children in a residential setting?", why: "Character check — good cooks in children's homes understand food as care." },
+    ],
+  },
+};
+
+// ── COMPONENTS ────────────────────────────────────────────
+
+const Badge = ({ label, color = C.teal }) => (
+  <span style={{
+    background: color + "20", color, border: `1px solid ${color}44`,
+    borderRadius: 4, padding: "2px 8px", fontSize: 10, fontWeight: 700, letterSpacing: 0.4,
+  }}>{label}</span>
+);
+
+const Alert = ({ type = "warning", children }) => {
+  const m = { danger:{bg:C.redL,b:C.red,i:"🚨"}, warning:{bg:C.amberL,b:C.amber,i:"⚠️"}, info:{bg:"#EFF6FF",b:C.teal,i:"ℹ️"}, success:{bg:C.greenL,b:C.green,i:"✅"} };
+  const s = m[type];
+  return (
+    <div style={{background:s.bg,borderLeft:`4px solid ${s.b}`,borderRadius:"0 8px 8px 0",padding:"10px 14px",marginBottom:12,fontSize:13,color:C.dark,display:"flex",gap:8}}>
+      <span style={{flexShrink:0}}>{s.i}</span><div>{children}</div>
+    </div>
+  );
+};
+
+const ScoreBtn = ({ val, current, onSelect }) => {
+  const labels = { 5:"Excellent", 4:"Good", 3:"Adequate", 2:"Concern", 1:"🚨 Red Flag" };
+  const colors = { 5:C.green, 4:C.teal, 3:C.gold, 2:C.amber, 1:C.red };
+  const active = current === val;
+  return (
+    <button onClick={() => onSelect(val)} style={{
+      padding:"5px 10px", borderRadius:6, border:`1.5px solid ${colors[val]}`,
+      background: active ? colors[val] : "transparent",
+      color: active ? C.white : colors[val],
+      fontWeight:700, fontSize:11, cursor:"pointer", transition:"all 0.12s",
+    }}>{val} — {labels[val]}</button>
+  );
+};
+
+// ── PANEL SECTION ─────────────────────────────────────────
+function PanelSection({ title, subtitle, color, questions, stateKey, data, setData }) {
+  const scores = data[stateKey]?.scores || {};
+  const notes  = data[stateKey]?.notes  || {};
+  const flags  = data[stateKey]?.flags  || {};
+
+  const update = (field, idx, val) =>
+    setData(prev => ({ ...prev, [stateKey]: { ...prev[stateKey], [field]: { ...(prev[stateKey]?.[field] || {}), [idx]: val } } }));
+
+  const avg = Object.keys(scores).length > 0
+    ? (Object.values(scores).reduce((a,b)=>a+b,0) / Object.keys(scores).length).toFixed(1)
+    : null;
+
+  const hasFlag = Object.values(scores).some(s=>s===1) || Object.values(flags).some(Boolean);
+
+  return (
+    <div>
+      <div style={{background:color,borderRadius:12,padding:"14px 18px",marginBottom:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div>
+          <div style={{color:C.white,fontWeight:800,fontSize:15}}>{title}</div>
+          <div style={{color:C.white+"bb",fontSize:12,marginTop:2}}>{subtitle}</div>
+        </div>
+        {avg && <div style={{textAlign:"center"}}>
+          <div style={{fontSize:26,fontWeight:800,color:C.white}}>{avg}</div>
+          <div style={{fontSize:10,color:C.white+"99"}}>AVG / 5</div>
+        </div>}
+      </div>
+
+      {hasFlag && <Alert type="danger"><strong>Red Flag or child-safety concern flagged.</strong> Escalate to Executive Director before any decision.</Alert>}
+      <Alert type="info">Score each answer 1–5 after they respond. Add specific notes with direct quotes. These become the hiring record.</Alert>
+
+      {questions.map((item, idx) => (
+        <div key={idx} style={{background:C.white,borderRadius:12,overflow:"hidden",border:`1px solid ${scores[idx]===1||flags[idx]?C.red:C.grayL}`,marginBottom:12,boxShadow:scores[idx]===1?`0 0 0 2px ${C.red}22`:"none"}}>
+          <div style={{padding:"11px 15px",background:"#F9FAFB",borderBottom:`1px solid ${C.grayL}`,display:"flex",gap:8,alignItems:"flex-start"}}>
+            <div style={{width:22,height:22,borderRadius:"50%",background:color,color:C.white,fontSize:11,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1}}>{idx+1}</div>
+            <div>
+              <div style={{fontSize:13,fontWeight:700,color:C.navy,lineHeight:1.5}}>{item.q}</div>
+              <div style={{fontSize:11,color:C.teal,marginTop:3}}><strong>WHY WE ASK:</strong> {item.why}</div>
+            </div>
+          </div>
+          <div style={{padding:"12px 15px"}}>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
+              {[5,4,3,2,1].map(v=><ScoreBtn key={v} val={v} current={scores[idx]} onSelect={val=>update("scores",idx,val)}/>)}
+            </div>
+            <textarea
+              value={notes[idx]||""}
+              onChange={e=>update("notes",idx,e.target.value)}
+              placeholder="Specific notes — quote key phrases, note hesitation or tone..."
+              style={{width:"100%",height:65,padding:"8px 12px",border:`1px solid ${C.grayL}`,borderRadius:8,fontSize:12,fontFamily:"inherit",resize:"vertical",outline:"none",boxSizing:"border-box"}}
+            />
+            <label style={{display:"flex",alignItems:"center",gap:8,marginTop:8,cursor:"pointer",fontSize:12,color:C.red,fontWeight:600}}>
+              <input type="checkbox" checked={!!flags[idx]} onChange={e=>update("flags",idx,e.target.checked)} style={{width:16,height:16,accentColor:C.red}}/>
+              🚨 Flag for child-safety concern — requires ED review
+            </label>
+          </div>
+        </div>
+      ))}
+
+      <div style={{marginTop:16}}>
+        <div style={{fontSize:12,fontWeight:600,color:C.dark,marginBottom:8}}>Panel Recommendation</div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          {["Proceed","Proceed — with noted concerns","Hold — ED review required","Do Not Proceed"].map(opt=>{
+            const col = opt==="Proceed"?C.green:opt.includes("concerns")?C.gold:opt.includes("Hold")?C.amber:C.red;
+            const active = data[stateKey]?.recommendation === opt;
+            return <button key={opt} onClick={()=>setData(prev=>({...prev,[stateKey]:{...prev[stateKey],recommendation:opt}}))} style={{padding:"8px 14px",borderRadius:8,border:"none",fontWeight:700,fontSize:12,cursor:"pointer",background:active?col:C.grayL,color:active?C.white:C.dark}}>{opt}</button>;
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── DECISION STAGE ────────────────────────────────────────
+function DecisionStage({ role, data, setData }) {
+  const def = ROLES[role];
+  const [refNotes, setRefNotes] = useState({ ref1: { done: false, notes: "" }, ref2: { done: false, notes: "" } });
+  const [edNotes, setEdNotes] = useState("");
+  const [decision, setDecision] = useState(null);
+
+  const hasFlags = ["panel1","panel2"].some(k =>
+    Object.values(data[k]?.flags || {}).some(Boolean) ||
+    Object.values(data[k]?.scores || {}).some(s => s === 1)
+  );
+
+  const canOffer = refNotes.ref1.done && refNotes.ref2.done && !hasFlags && data.panel1?.recommendation?.includes("Proceed") && data.panel2?.recommendation?.includes("Proceed");
+
+  return (
+    <div>
+      {hasFlags && <Alert type="danger"><strong>Child-safety flags recorded.</strong> The Offer button is locked until the Executive Director reviews and clears the flagged answers in writing.</Alert>}
+
+      {/* DSWD Compliance Checklist */}
+      <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.grayL}`,padding:20,marginBottom:16}}>
+        <div style={{fontSize:14,fontWeight:700,color:C.navy,marginBottom:4}}>🛡️ DSWD / NACC / RACCO Pre-Offer Compliance Checklist</div>
+        <div style={{fontSize:12,color:C.gray,marginBottom:14}}>
+          Every item marked <Badge label="HARD BLOCK" color={C.red}/> must be satisfied before generating an offer letter. These are DSWD AO 16 s.2004 requirements for {def.label} positions. HR must verify each — not just rely on the applicant's declaration.
+        </div>
+        {def.dswd_requirements.map((r, i) => (
+          <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",padding:"9px 0",borderBottom:i<def.dswd_requirements.length-1?`1px dashed ${C.grayL}`:"none"}}>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:r.hard?700:400,color:C.dark}}>{r.req}</div>
+              <div style={{fontSize:11,color:C.gray,marginTop:2}}>{r.basis}</div>
+            </div>
+            {r.hard && <Badge label="HARD BLOCK" color={C.red}/>}
+          </div>
+        ))}
+      </div>
+
+      {/* Reference Checks */}
+      <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.grayL}`,padding:20,marginBottom:16}}>
+        <div style={{fontSize:14,fontWeight:700,color:C.navy,marginBottom:12}}>📞 Reference Checks — Both Required</div>
+        {["ref1","ref2"].map((key, i) => (
+          <div key={key} style={{background:"#F9FAFB",borderRadius:10,padding:14,marginBottom:10,border:`1px solid ${refNotes[key].done?C.green:C.grayL}`}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+              <div style={{fontSize:13,fontWeight:700,color:C.navy}}>Reference {i+1}</div>
+              <label style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer"}}>
+                <input type="checkbox" checked={refNotes[key].done}
+                  onChange={e=>setRefNotes(prev=>({...prev,[key]:{...prev[key],done:e.target.checked}}))}
+                  style={{width:16,height:16,accentColor:C.green}}/>
+                <span style={{fontSize:12,fontWeight:600,color:C.green}}>Call Completed</span>
+              </label>
+            </div>
+            <textarea value={refNotes[key].notes}
+              onChange={e=>setRefNotes(prev=>({...prev,[key]:{...prev[key],notes:e.target.value}}))}
+              placeholder={`Reference ${i+1} call notes — how long they know the applicant, what they said about character and work with children or in relevant role, any concerns...`}
+              style={{width:"100%",height:75,padding:"8px 12px",border:`1px solid ${C.grayL}`,borderRadius:8,fontSize:12,fontFamily:"inherit",resize:"vertical",outline:"none",boxSizing:"border-box"}}/>
+          </div>
+        ))}
+      </div>
+
+      {/* Summary */}
+      <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.grayL}`,padding:20,marginBottom:16}}>
+        <div style={{fontSize:14,fontWeight:700,color:C.navy,marginBottom:14}}>📊 Screening Summary</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10}}>
+          {[
+            { label:"Panel 1 Recommendation", value: data.panel1?.recommendation || "Pending" },
+            { label:"Panel 1 Avg Score", value: Object.keys(data.panel1?.scores||{}).length > 0 ? (Object.values(data.panel1.scores).reduce((a,b)=>a+b,0)/Object.keys(data.panel1.scores).length).toFixed(1)+" / 5" : "—" },
+            { label:"Panel 2 Recommendation", value: data.panel2?.recommendation || "Pending" },
+            { label:"Panel 2 Avg Score", value: Object.keys(data.panel2?.scores||{}).length > 0 ? (Object.values(data.panel2.scores).reduce((a,b)=>a+b,0)/Object.keys(data.panel2.scores).length).toFixed(1)+" / 5" : "—" },
+          ].map((s,i)=>{
+            const good = s.value.includes("Proceed") || parseFloat(s.value) >= 3.5;
+            return (
+              <div key={i} style={{background:s.value==="Pending"?"#F9FAFB":good?C.greenL:C.redL,borderRadius:10,padding:12,border:`1px solid ${s.value==="Pending"?C.grayL:good?C.green:C.red}33`}}>
+                <div style={{fontSize:11,color:C.gray,fontWeight:600,marginBottom:4}}>{s.label}</div>
+                <div style={{fontSize:13,fontWeight:700,color:s.value==="Pending"?C.gray:good?C.green:C.red}}>{s.value}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Final Decision */}
+      <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.grayL}`,padding:20}}>
+        <div style={{fontSize:14,fontWeight:700,color:C.navy,marginBottom:4}}>⭐ Executive Director — Final Decision</div>
+        <div style={{fontSize:12,color:C.gray,marginBottom:14}}>
+          The Executive Director makes all final hiring decisions. Jackson presents the complete file.
+        </div>
+        <textarea value={edNotes} onChange={e=>setEdNotes(e.target.value)}
+          placeholder="ED notes and rationale..."
+          style={{width:"100%",height:70,padding:"9px 12px",border:`1px solid ${C.grayL}`,borderRadius:8,fontSize:13,fontFamily:"inherit",resize:"vertical",outline:"none",boxSizing:"border-box",marginBottom:12}}/>
+        <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+          {[
+            { label:"✅ OFFER — Proceed with Conditional Offer", color:C.green, disabled:!canOffer },
+            { label:"⏸️ HOLD — More Information Needed", color:C.amber, disabled:false },
+            { label:"❌ DO NOT HIRE — File Closed", color:C.red, disabled:false },
+          ].map(opt=>(
+            <button key={opt.label} onClick={()=>!opt.disabled&&setDecision(opt.label)}
+              disabled={opt.disabled}
+              style={{padding:"10px 16px",borderRadius:8,border:"none",fontWeight:700,fontSize:12,cursor:opt.disabled?"not-allowed":"pointer",background:decision===opt.label?opt.color:C.grayL,color:decision===opt.label?C.white:C.dark,opacity:opt.disabled?0.45:1}}>
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        {!canOffer && <div style={{fontSize:12,color:C.amber,marginTop:10}}>⚠️ Offer button locked until both reference checks are complete, all flags are cleared by ED, and both panels recommend Proceed.</div>}
+        {decision?.includes("OFFER") && <Alert type="success" style={{marginTop:16}}><strong>Proceed with Conditional Offer.</strong> Generate offer letter → ED signature → deliver with pre-employment requirements checklist → 7-day deadline → schedule Day 1 only after NBI Clearance physically verified.</Alert>}
+        {decision?.includes("DO NOT HIRE") && <Alert type="danger" style={{marginTop:16}}><strong>File closed.</strong> File screening records. Send courteous neutral rejection. Retain per data retention policy. Do not state specific rejection reasons in writing without legal guidance.</Alert>}
+      </div>
+    </div>
+  );
+}
+
+// ── MAIN APP ──────────────────────────────────────────────
+function ScreeningSystem() {
+  const [selectedRole, setSelectedRole] = useState(null);
+  const [stage, setStage] = useState(0);
+  const [data, setData] = useState({});
+
+  const def = selectedRole ? ROLES[selectedRole] : null;
+
+  const STAGES = def ? [
+    { id:"disq",    label:"Disqualifier Check",    icon:"🛡️" },
+    { id:"panel1",  label:"Interview 1 — HR",       icon:"🎙️" },
+    { id:"panel2",  label:`Interview 2 — ${def.interview2_panel.split('/')[0].trim()}`, icon:"👥" },
+    { id:"decision",label:"Screening Decision",     icon:"⭐" },
+  ] : [];
+
+  const canAdvance = (i) => {
+    if (i === 0) return !!data.disqCleared;
+    if (i === 1) return !!data.panel1?.recommendation;
+    if (i === 2) return !!data.panel2?.recommendation;
+    return true;
+  };
+
+  if (!selectedRole) {
+    return (
+      <div style={{minHeight:"100vh",background:C.cream,fontFamily:"'Segoe UI',system-ui,sans-serif"}}>
+        <div style={{background:C.navy,padding:"20px 24px",textAlign:"center"}}>
+          <div style={{fontSize:22,fontWeight:800,color:C.white,letterSpacing:-0.3}}>Safe Haven Screening System</div>
+          <div style={{fontSize:12,color:C.teal2,marginTop:4,letterSpacing:0.5}}>DSWD · NACC/RACCO · DOLE COMPLIANT · ALL ROLES</div>
+        </div>
+        <div style={{padding:24,maxWidth:700,margin:"0 auto"}}>
+          <div style={{fontSize:15,fontWeight:700,color:C.navy,marginBottom:6}}>Select the Role You Are Screening For</div>
+          <div style={{fontSize:13,color:C.gray,marginBottom:20}}>Each role loads its own qualification standards, DSWD/NACC/RACCO compliance requirements, disqualifiers, and interview question banks.</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:14}}>
+            {Object.values(ROLES).map(r => (
+              <div key={r.id} onClick={()=>{setSelectedRole(r.id);setStage(0);setData({});}}
+                style={{background:C.white,borderRadius:14,padding:20,cursor:"pointer",border:`2px solid ${C.grayL}`,transition:"all 0.15s"}}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor=r.color;e.currentTarget.style.boxShadow=`0 4px 16px ${r.color}22`;}}
+                onMouseLeave={e=>{e.currentTarget.style.borderColor=C.grayL;e.currentTarget.style.boxShadow="none";}}>
+                <div style={{fontSize:28,marginBottom:8}}>{r.icon}</div>
+                <div style={{fontSize:14,fontWeight:800,color:C.navy,marginBottom:4}}>{r.label}</div>
+                <div style={{fontSize:11,color:C.gray,lineHeight:1.5,marginBottom:10}}>{r.subtitle}</div>
+                <div style={{background:r.color,color:C.white,borderRadius:6,padding:"4px 10px",fontSize:10,fontWeight:700,display:"inline-block"}}>Start Screening →</div>
+              </div>
+            ))}
+          </div>
+          <div style={{marginTop:24,background:C.white,borderRadius:12,border:`1px solid ${C.grayL}`,padding:16}}>
+            <div style={{fontSize:13,fontWeight:700,color:C.navy,marginBottom:10}}>What Each Role Includes</div>
+            {Object.values(ROLES).map(r => (
+              <div key={r.id} style={{display:"flex",gap:10,padding:"7px 0",borderBottom:`1px dashed ${C.grayL}`,alignItems:"flex-start"}}>
+                <span style={{fontSize:16,flexShrink:0}}>{r.icon}</span>
+                <div>
+                  <span style={{fontSize:12,fontWeight:700,color:C.navy}}>{r.label}: </span>
+                  <span style={{fontSize:12,color:C.gray}}>{r.dswd_requirements.filter(r=>r.hard).length} hard DSWD blocks · {r.hard_disqualifiers.length} disqualifiers · {r.interview1_questions.length + r.interview2_questions.length} interview questions · Panel 2: {r.interview2_panel}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{minHeight:"100vh",background:C.cream,fontFamily:"'Segoe UI',system-ui,sans-serif"}}>
+      {/* Header */}
+      <div style={{background:C.navy,padding:"14px 20px"}}>
+        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
+          <div style={{width:38,height:38,borderRadius:10,background:def.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>{def.icon}</div>
+          <div>
+            <div style={{color:C.white,fontWeight:800,fontSize:16}}>Safe Haven — {def.label} Screening</div>
+            <div style={{color:C.teal2,fontSize:11}}>{def.subtitle} · {def.moo_qualifications.substring(0,80)}...</div>
+          </div>
+          <button onClick={()=>setSelectedRole(null)} style={{marginLeft:"auto",background:"none",border:`1px solid rgba(255,255,255,0.2)`,color:"rgba(255,255,255,0.7)",borderRadius:6,padding:"5px 12px",fontSize:11,cursor:"pointer"}}>← Change Role</button>
+        </div>
+        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+          {STAGES.map((s,i)=>(
+            <button key={s.id} onClick={()=>(i===0||canAdvance(i-1))&&setStage(i)} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:7,border:"none",cursor:(i===0||canAdvance(i-1))?"pointer":"not-allowed",background:stage===i?def.color:"rgba(255,255,255,0.1)",color:C.white,opacity:(i===0||canAdvance(i-1))?1:0.45,fontWeight:stage===i?700:400,fontSize:12,transition:"all 0.15s"}}>
+              <span>{s.icon}</span><span>{s.label}</span>
+              {canAdvance(i)&&i<stage&&<span style={{color:"#4ADE80",fontSize:10}}>✓</span>}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{padding:20,maxWidth:900,margin:"0 auto"}}>
+
+        {/* Stage 0: Disqualifier Check */}
+        {stage === 0 && (
+          <div>
+            <Alert type="danger">
+              <strong>Complete this check before any interview.</strong> If any hard disqualifier applies, stop immediately and notify the Executive Director. Do not proceed with the interview.
+            </Alert>
+            <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.grayL}`,padding:20,marginBottom:16}}>
+              <div style={{fontSize:14,fontWeight:700,color:C.navy,marginBottom:4}}>🛡️ Hard Disqualifiers — {def.label}</div>
+              <div style={{fontSize:12,color:C.gray,marginBottom:14}}>Check each one. If ANY applies to this applicant, stop here.</div>
+              {def.hard_disqualifiers.map((d,i)=>(
+                <div key={i} style={{display:"flex",gap:8,alignItems:"center",padding:"9px 12px",marginBottom:6,background:C.redL,borderRadius:8,border:`1px solid ${C.red}22`}}>
+                  <span style={{color:C.red,flexShrink:0}}>✗</span>
+                  <span style={{fontSize:12,color:C.dark}}>{d}</span>
+                </div>
+              ))}
+            </div>
+
+            <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.grayL}`,padding:20,marginBottom:16}}>
+              <div style={{fontSize:14,fontWeight:700,color:C.navy,marginBottom:14}}>✅ Pre-Interview Verification</div>
+              {def.dswd_requirements.map((r,i)=>(
+                <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",padding:"8px 0",borderBottom:i<def.dswd_requirements.length-1?`1px dashed ${C.grayL}`:"none"}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13,fontWeight:r.hard?600:400,color:C.dark}}>{r.req}</div>
+                    <div style={{fontSize:11,color:C.gray,marginTop:2}}>{r.basis}</div>
+                  </div>
+                  {r.hard && <Badge label="HARD BLOCK" color={C.red}/>}
+                </div>
+              ))}
+            </div>
+
+            <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.grayL}`,padding:20}}>
+              <div style={{fontSize:13,fontWeight:600,color:C.dark,marginBottom:10}}>Confirm before proceeding:</div>
+              <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                <button onClick={()=>setData(prev=>({...prev,disqCleared:"clear"}))} style={{padding:"10px 20px",borderRadius:8,border:"none",fontWeight:700,fontSize:13,cursor:"pointer",background:data.disqCleared==="clear"?C.green:C.grayL,color:data.disqCleared==="clear"?C.white:C.dark}}>
+                  ✅ No disqualifiers apply — proceed to interviews
+                </button>
+                <button onClick={()=>setData(prev=>({...prev,disqCleared:"stop"}))} style={{padding:"10px 20px",borderRadius:8,border:"none",fontWeight:700,fontSize:13,cursor:"pointer",background:data.disqCleared==="stop"?C.red:C.grayL,color:data.disqCleared==="stop"?C.white:C.dark}}>
+                  🚫 Disqualifier found — stop and notify ED
+                </button>
+              </div>
+              {data.disqCleared==="stop" && <Alert type="danger" style={{marginTop:12}}><strong>Application stopped.</strong> Notify the Executive Director immediately. Do not conduct any interview. File the screening record. Send a neutral communication to the applicant.</Alert>}
+            </div>
+          </div>
+        )}
+
+        {/* Stage 1: Panel 1 */}
+        {stage === 1 && (
+          <PanelSection
+            title="Interview 1 — HR & Values Panel"
+            subtitle="Jackson leads. Values, safeguarding awareness, character, self-regulation."
+            color={C.gold}
+            questions={def.interview1_questions}
+            stateKey="panel1"
+            data={data}
+            setData={setData}
+          />
+        )}
+
+        {/* Stage 2: Panel 2 */}
+        {stage === 2 && (
+          <PanelSection
+            title={`Interview 2 — ${def.interview2_panel}`}
+            subtitle="Technical, practical, and role-specific assessment."
+            color={def.color}
+            questions={def.interview2_questions}
+            stateKey="panel2"
+            data={data}
+            setData={setData}
+          />
+        )}
+
+        {/* Stage 3: Decision */}
+        {stage === 3 && <DecisionStage role={selectedRole} data={data} setData={setData}/>}
+
+        {/* Navigation */}
+        <div style={{display:"flex",justifyContent:"space-between",marginTop:24}}>
+          <button onClick={()=>setStage(Math.max(0,stage-1))} disabled={stage===0} style={{padding:"10px 18px",borderRadius:8,border:`1px solid ${C.grayL}`,background:"none",cursor:stage===0?"not-allowed":"pointer",fontWeight:600,fontSize:13,color:stage===0?C.gray:C.dark}}>← Previous</button>
+          {stage < STAGES.length-1 && (
+            <button onClick={()=>canAdvance(stage)&&setStage(stage+1)} disabled={!canAdvance(stage)} style={{padding:"10px 20px",borderRadius:8,border:"none",background:canAdvance(stage)?def.color:C.gray,color:C.white,fontWeight:700,fontSize:13,cursor:canAdvance(stage)?"pointer":"not-allowed"}}>
+              Next: {STAGES[stage+1]?.label} →
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div style={{borderTop:`1px solid ${C.grayL}`,padding:"10px 20px",background:C.white,fontSize:11,color:C.gray,display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
+        <span>Safe Haven Screening System · DSWD AO 16 s.2004 · NACC/RACCO · DOLE · MOO v.11.18.2025</span>
+        <span style={{color:C.red,fontWeight:600}}>⚠️ All decisions require human HR and ED review. AI output is advisory only.</span>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(ScreeningSystem,null));
+</script>
+</body>
+</html>

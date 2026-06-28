@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Safe Haven — Application Pre-Screen</title>
+<style>
+  :root {
+    --navy: #1B2B4B;
+    --teal: #2A7A7A;
+    --teal2: #3AADAD;
+    --gold: #C8941A;
+    --cream: #F7F4EE;
+    --white: #FFFFFF;
+    --red: #B83232;
+    --green: #1A6B3C;
+    --gray: #6B7280;
+    --grayL: #E5E7EB;
+    --dark: #374151;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--cream);
+    color: var(--dark);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--navy);
+    padding: 20px 20px 16px;
+    text-align: center;
+  }
+  .logo-box {
+    width: 56px; height: 56px; background: var(--teal);
+    border-radius: 14px; margin: 0 auto 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+  }
+  .org-name { color: var(--white); font-weight: 800; font-size: 17px; line-height: 1.3; }
+  .form-title { color: var(--teal2); font-size: 13px; margin-top: 4px; letter-spacing: 0.5px; }
+
+  /* ── ROLE SELECTOR ── */
+  .role-section {
+    background: var(--white);
+    border-bottom: 2px solid var(--grayL);
+    padding: 20px;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .role-label { font-size: 12px; font-weight: 700; color: var(--gray); margin-bottom: 10px; letter-spacing: 0.5px; }
+  .role-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .role-btn {
+    padding: 10px 12px; border-radius: 10px;
+    border: 2px solid var(--grayL); background: var(--white);
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    text-align: left; transition: all 0.15s; color: var(--dark);
+  }
+  .role-btn.active {
+    border-color: var(--teal); background: var(--teal);
+    color: var(--white);
+  }
+  .role-btn .role-icon { font-size: 16px; display: block; margin-bottom: 3px; }
+
+  /* ── MAIN CONTENT ── */
+  .main { padding: 20px; max-width: 640px; margin: 0 auto; }
+
+  /* ── SECTIONS ── */
+  .section {
+    background: var(--white); border-radius: 14px;
+    border: 1px solid var(--grayL);
+    margin-bottom: 16px; overflow: hidden;
+  }
+  .section-head {
+    padding: 12px 16px;
+    font-size: 13px; font-weight: 700; color: var(--white);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-body { padding: 16px; }
+
+  /* ── FORM FIELDS ── */
+  .field { margin-bottom: 16px; }
+  .field:last-child { margin-bottom: 0; }
+  label {
+    display: block; font-size: 12px; font-weight: 600;
+    color: var(--dark); margin-bottom: 5px;
+  }
+  .required-star { color: var(--red); }
+  input[type=text], input[type=email], input[type=tel],
+  input[type=date], select, textarea {
+    width: 100%; padding: 11px 14px;
+    border: 1.5px solid var(--grayL); border-radius: 10px;
+    font-size: 14px; font-family: inherit;
+    color: var(--dark); outline: none;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+    background: var(--white);
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--teal);
+  }
+  textarea { resize: vertical; min-height: 100px; line-height: 1.6; }
+  .hint { font-size: 11px; color: var(--gray); margin-top: 4px; line-height: 1.5; }
+
+  /* ── RADIO / CHECKBOX ── */
+  .radio-group, .check-group { display: flex; flex-direction: column; gap: 8px; }
+  .radio-item, .check-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 12px; border-radius: 8px;
+    border: 1.5px solid var(--grayL); cursor: pointer;
+    transition: all 0.1s; background: var(--white);
+  }
+  .radio-item:has(input:checked),
+  .check-item:has(input:checked) {
+    border-color: var(--teal); background: #EEF8F8;
+  }
+  .radio-item input, .check-item input {
+    width: 18px; height: 18px; margin-top: 1px;
+    flex-shrink: 0; accentColor: var(--teal);
+    cursor: pointer;
+  }
+  .radio-item span, .check-item span {
+    font-size: 13px; line-height: 1.5; color: var(--dark);
+  }
+
+  /* ── WARNING BOX ── */
+  .warn-box {
+    background: #FEF6E4; border-left: 4px solid var(--gold);
+    border-radius: 0 8px 8px 0; padding: 10px 14px;
+    font-size: 12px; color: var(--dark); margin-bottom: 14px;
+    line-height: 1.6;
+  }
+  .alert-box {
+    background: #FEF2F2; border-left: 4px solid var(--red);
+    border-radius: 0 8px 8px 0; padding: 10px 14px;
+    font-size: 12px; color: var(--dark); margin-bottom: 14px;
+    line-height: 1.6;
+  }
+
+  /* ── DSWD BADGE ── */
+  .compliance-tags {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;
+  }
+  .ctag {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
+    padding: 2px 8px; border-radius: 4px;
+  }
+
+  /* ── SUBMIT ── */
+  .submit-section { padding: 20px; }
+  .consent-box {
+    background: var(--navy); color: var(--white);
+    border-radius: 12px; padding: 16px; margin-bottom: 16px;
+    font-size: 12px; line-height: 1.8;
+  }
+  .consent-check {
+    display: flex; gap: 10px; align-items: flex-start;
+    margin-top: 12px;
+  }
+  .consent-check input { width: 18px; height: 18px; flex-shrink: 0; margin-top: 2px; }
+  .submit-btn {
+    width: 100%; padding: 16px;
+    background: var(--teal); color: var(--white);
+    border: none; border-radius: 12px;
+    font-size: 16px; font-weight: 800; cursor: pointer;
+    transition: background 0.15s; letter-spacing: 0.3px;
+  }
+  .submit-btn:disabled { background: var(--gray); cursor: not-allowed; }
+  .submit-btn:not(:disabled):active { background: var(--navy); }
+
+  /* ── SUCCESS ── */
+  #success-screen {
+    display: none; min-height: 100vh;
+    background: var(--navy);
+    align-items: center; justify-content: center;
+    flex-direction: column; text-align: center; padding: 40px 24px;
+  }
+  #success-screen .check { font-size: 64px; margin-bottom: 20px; }
+  #success-screen h2 { color: var(--white); font-size: 22px; margin-bottom: 12px; }
+  #success-screen p { color: var(--teal2); font-size: 14px; line-height: 1.8; max-width: 360px; }
+
+  /* ── PROGRESS BAR ── */
+  .progress-wrap {
+    background: rgba(255,255,255,0.15);
+    border-radius: 4px; height: 4px;
+    margin-top: 14px; overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%; background: var(--teal2);
+    border-radius: 4px; transition: width 0.3s;
+  }
+
+  /* ── ROLE-SPECIFIC SECTIONS (hidden by default) ── */
+  .role-section-block { display: none; }
+  .role-section-block.visible { display: block; }
+
+  @media (max-width: 400px) {
+    .role-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div id="form-container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo-box">🏠</div>
+    <div class="org-name">A Safe Haven Children's Home Foundation, Inc.</div>
+    <div class="form-title">APPLICANT PRE-SCREENING FORM · DAVAO CITY</div>
+    <div class="progress-wrap">
+      <div class="progress-bar" id="progress-bar" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- ROLE SELECTOR -->
+  <div class="role-section">
+    <div class="role-label">STEP 1 — SELECT THE POSITION YOU ARE APPLYING FOR</div>
+    <div class="role-grid">
+      <button class="role-btn" onclick="selectRole('houseparent')" id="btn-houseparent">
+        <span class="role-icon">🏠</span>House Parent<br><small style="font-weight:400;opacity:0.8">Level 1 or Level 2</small>
+      </button>
+      <button class="role-btn" onclick="selectRole('socialworker')" id="btn-socialworker">
+        <span class="role-icon">👩‍💼</span>Social Worker / RSW<br><small style="font-weight:400;opacity:0.8">Licensed RSW required</small>
+      </button>
+      <button class="role-btn" onclick="selectRole('admin')" id="btn-admin">
+        <span class="role-icon">🏢</span>Admin / Finance / HR<br><small style="font-weight:400;opacity:0.8">Office / support role</small>
+      </button>
+      <button class="role-btn" onclick="selectRole('teacher')" id="btn-teacher">
+        <span class="role-icon">📚</span>Teacher / ALS Facilitator<br><small style="font-weight:400;opacity:0.8">Education role</small>
+      </button>
+      <button class="role-btn" onclick="selectRole('cook')" id="btn-cook">
+        <span class="role-icon">🍳</span>Cook / Kitchen Staff<br><small style="font-weight:400;opacity:0.8">Kitchen and nutrition</small>
+      </button>
+    </div>
+  </div>
+
+  <div class="main" id="form-body" style="display:none">
+
+    <!-- INTRO NOTE -->
+    <div class="warn-box">
+      <strong>Thank you for your interest in joining Safe Haven.</strong><br>
+      Please answer every question honestly and completely. This form is your first step in our hiring process. Inaccurate or incomplete answers will affect your application. All information is kept confidential and handled under the Data Privacy Act (RA 10173).
+    </div>
+
+    <!-- ── SECTION A: PERSONAL INFORMATION ── -->
+    <div class="section">
+      <div class="section-head" style="background:var(--navy)">
+        👤 A. Personal Information
+      </div>
+      <div class="section-body">
+        <div class="field">
+          <label>Full Legal Name <span class="required-star">*</span></label>
+          <input type="text" id="fullName" placeholder="As it appears on your government ID" required>
+        </div>
+        <div class="field">
+          <label>Nickname (what we can call you)</label>
+          <input type="text" id="nickname" placeholder="e.g. Maria">
+        </div>
+        <div class="field">
+          <label>Mobile Number <span class="required-star">*</span></label>
+          <input type="tel" id="phone" placeholder="09XX XXX XXXX" required>
+        </div>
+        <div class="field">
+          <label>Email Address <span style="color:#2A7A7A;font-size:10px;font-weight:700">(Recommended)</span></label>
+          <input type="email" id="email" placeholder="your@email.com">
+          <div class="hint">Optional but recommended. We may contact you by email or mobile number.</div>
+        </div>
+
+        <div class="field">
+          <label>Current City / Municipality <span class="required-star">*</span></label>
+          <input type="text" id="city" placeholder="e.g. Davao City, Tugbok District" required>
+        </div>
+        <div class="field">
+          <label>Date of Birth <span class="required-star">*</span></label>
+          <input type="date" id="dob" required>
+        </div>
+        <div class="field">
+          <label>Civil Status</label>
+          <select id="civilStatus">
+            <option value="">— Select —</option>
+            <option>Single</option>
+            <option>Married</option>
+            <option>Separated</option>
+            <option>Widowed</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION B: EDUCATION ── -->
+    <div class="section">
+      <div class="section-head" style="background:var(--teal)">
+        🎓 B. Education and Credentials
+      </div>
+      <div class="section-body">
+        <div class="compliance-tags">
+          <span class="ctag" style="background:#EEF1F8;color:var(--navy)">DSWD AO 16</span>
+          <span class="ctag" style="background:#EEF8F8;color:var(--teal)">201 File Requirement</span>
+        </div>
+        <div class="field">
+          <label>Highest Educational Attainment <span class="required-star">*</span></label>
+          <select id="education" required>
+            <option value="">— Select —</option>
+            <option>Elementary Graduate</option>
+            <option>High School Graduate / Senior High</option>
+            <option>College Undergraduate (no degree)</option>
+            <option>College Graduate — 2-year course</option>
+            <option>College Graduate — 4-year course</option>
+            <option>Post-Graduate / Master's Degree</option>
+            <option>Vocational / Technical (NC II or equivalent)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Course / Field of Study</label>
+          <input type="text" id="course" placeholder="e.g. BS Social Work, Education, Nursing, etc.">
+        </div>
+        <div class="field">
+          <label>School / University</label>
+          <input type="text" id="school" placeholder="Name of school">
+        </div>
+
+        <!-- Social Worker only -->
+        <div class="role-section-block" id="edu-sw">
+          <div class="alert-box">
+            <strong>🔴 DSWD Requirement for Social Workers:</strong> A valid PRC license (RSW) is required. Unlicensed social work practice is prohibited under RA 9442. Your license will be verified before any offer is made.
+          </div>
+          <div class="field">
+            <label>PRC License Number (RSW) <span class="required-star">*</span></label>
+            <input type="text" id="prcNumber" placeholder="PRC License No.">
+          </div>
+          <div class="field">
+            <label>PRC License Expiry Date <span class="required-star">*</span></label>
+            <input type="date" id="prcExpiry">
+          </div>
+        </div>
+
+        <!-- Teacher only -->
+        <div class="role-section-block" id="edu-teacher">
+          <div class="field">
+            <label>Do you hold a valid PRC license (LPT)?</label>
+            <div class="radio-group">
+              <label class="radio-item">
+                <input type="radio" name="lpt" value="yes">
+                <span>Yes — I have a valid LPT license</span>
+              </label>
+              <label class="radio-item">
+                <input type="radio" name="lpt" value="no">
+                <span>No — I do not have an LPT license</span>
+              </label>
+              <label class="radio-item">
+                <input type="radio" name="lpt" value="als">
+                <span>I am applying for the ALS Facilitator role (license not required)</span>
+              </label>
+            </div>
+          </div>
+          <div class="field">
+            <label>ALS Facilitator Training or Certification (if applicable)</label>
+            <input type="text" id="alsCert" placeholder="Training provider and year, if any">
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Other Relevant Training or Certifications</label>
+          <textarea id="otherCerts" placeholder="e.g. Child protection training, first aid, food safety, social work, etc. List all relevant training you have completed."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION C: WORK EXPERIENCE ── -->
+    <div class="section">
+      <div class="section-head" style="background:var(--navy)">
+        💼 C. Work Experience
+      </div>
+      <div class="section-body">
+        <div class="field">
+          <label>Have you worked with children before? <span class="required-star">*</span></label>
+          <div class="radio-group">
+            <label class="radio-item">
+              <input type="radio" name="childWork" value="yes_residential">
+              <span>Yes — in a residential care setting (children's home, shelter, etc.)</span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="childWork" value="yes_other">
+              <span>Yes — in another setting (school, community, church, family, etc.)</span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="childWork" value="no">
+              <span>No — this would be my first time working directly with children</span>
+            </label>
+          </div>
+        </div>
+        <div class="field">
+          <label>Describe your experience working with children (or caring for others if no child experience) <span class="required-star">*</span></label>
+          <textarea id="childExperience" placeholder="Be specific. Where, what you did, how long, and what kind of children or people you cared for." required></textarea>
+        </div>
+        <div class="field">
+          <label>Most Recent Employer or Organization</label>
+          <input type="text" id="lastEmployer" placeholder="Name of organization / employer">
+        </div>
+        <div class="field">
+          <label>Position / Role at Most Recent Employer</label>
+          <input type="text" id="lastRole" placeholder="Your job title or role">
+        </div>
+        <div class="field">
+          <label>Reason for Leaving Most Recent Position</label>
+          <input type="text" id="leavingReason" placeholder="Be honest — this is not disqualifying">
+        </div>
+        <div class="field">
+          <label>Have you ever been dismissed, suspended, or asked to resign from any job? <span class="required-star">*</span></label>
+          <div class="radio-group">
+            <label class="radio-item">
+              <input type="radio" name="dismissed" value="no">
+              <span>No</span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="dismissed" value="yes">
+              <span>Yes — I will explain if asked during the interview</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION D: CHILD SAFEGUARDING ── -->
+    <div class="section">
+      <div class="section-head" style="background:var(--red)">
+        🛡️ D. Child Safeguarding — Required for All Applicants
+      </div>
+      <div class="section-body">
+        <div class="compliance-tags">
+          <span class="ctag" style="background:#FEF2F2;color:var(--red)">DSWD AO 16 s.2004</span>
+          <span class="ctag" style="background:#FEF2F2;color:var(--red)">RA 7610</span>
+          <span class="ctag" style="background:#FEF2F2;color:var(--red)">Safe Haven CPP</span>
+        </div>
+        <div class="warn-box">
+          All questions in this section are required. Safe Haven has zero tolerance for child abuse, neglect, or exploitation. Dishonest answers are grounds for immediate disqualification. If you are hired, these declarations become part of your 201 file.
+        </div>
+        <div class="field">
+          <label>Have you ever been accused of, investigated for, or convicted of any offense involving a child? <span class="required-star">*</span></label>
+          <div class="radio-group">
+            <label class="radio-item">
+              <input type="radio" name="childOffense" value="no" required>
+              <span>No</span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="childOffense" value="yes">
+              <span>Yes — I understand this must be disclosed and will be discussed</span>
+            </label>
+          </div>
+        </div>
+        <div class="field">
+          <label>Are you willing to undergo a background check including an NBI Clearance? <span class="required-star">*</span></label>
+          <div class="radio-group">
+            <label class="radio-item">
+              <input type="radio" name="nbiOk" value="yes" required>
+              <span>Yes — I agree to the NBI Clearance process</span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="nbiOk" value="no">
+              <span>No</span>
+            </label>
+          </div>
+          <div class="hint">An NBI Clearance is required by DSWD AO 16 s.2004 for all staff working with children. Unwillingness to provide one will end the application.</div>
+        </div>
+        <div class="field">
+          <label>In your own words, what does "professional boundaries with children" mean to you? <span class="required-star">*</span></label>
+          <textarea id="boundaries" placeholder="Describe what this means to you and give a specific example of a boundary you would hold." required></textarea>
+        </div>
+        <div class="field">
+          <label>A child in your care tells you something that worries you about their safety. What is the first thing you do? <span class="required-star">*</span></label>
+          <textarea id="disclosure" placeholder="Walk me through your response step by step." required></textarea>
+        </div>
+        <div class="field">
+          <label>What does physical discipline or physical punishment of children mean to you? <span class="required-star">*</span></label>
+          <textarea id="physicalDiscipline" placeholder="Share your honest view. Safe Haven's position is that corporal punishment is prohibited (MOO). Describe how you see positive discipline instead." required></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION E: ROLE-SPECIFIC QUESTIONS ── -->
+    <div class="section">
+      <div class="section-head" id="role-q-head" style="background:var(--teal)">
+        🎯 E. Role-Specific Questions
+      </div>
+      <div class="section-body" id="role-q-body">
+        <div style="color:var(--gray);font-size:13px">Select a position above to see role-specific questions.</div>
+      </div>
+    </div>
+
+    <!-- ── SECTION F: VALUES & MOTIVATION ── -->
+    <div class="section">
+      <div class="section-head" style="background:var(--navy)">
+        ❤️ F. Values and Motivation
+      </div>
+      <div class="section-body">
+        <div class="field">
+          <label>Why do you want to work at A Safe Haven Children's Home? <span class="required-star">*</span></label>
+          <textarea id="whySafeHaven" placeholder="Be honest and specific. What draws you to this organization and this work?" required></textarea>
+        </div>
+        <div class="field">
+          <label>Safe Haven's core values are Love, Joy, Excellence, Faithfulness, and Respect. Choose two and describe how you have lived these out in your work or personal life. <span class="required-star">*</span></label>
+          <textarea id="coreValues" placeholder="Be specific — use real examples, not just definitions." required></textarea>
+        </div>
+        <div class="field">
+          <label>Safe Haven is a faith-based, Christ-centered organization. Tell us about your own faith journey or how you relate to a faith-based workplace. <span class="required-star">*</span></label>
+          <textarea id="faith" placeholder="Be honest. We welcome genuine answers — there is no single right answer here." required></textarea>
+        </div>
+        <div class="field">
+          <label>Is there anything about your personal life, schedule, or circumstances we should know as we consider your application?</label>
+          <textarea id="personalNote" placeholder="Optional — but honesty here helps us place the right people in the right roles."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION G: AVAILABILITY ── -->
+    <div class="section">
+      <div class="section-head" style="background:var(--teal)">
+        📅 G. Availability and Schedule
+      </div>
+      <div class="section-body">
+
+        <!-- House Parent / Cook shift note -->
+        <div class="role-section-block" id="avail-shift" style="margin-bottom:14px">
+          <div class="alert-box">
+            <strong>Important:</strong> This role involves rotating shifts including evenings, overnight, and weekends. Please answer honestly about your availability — there is no penalty for being honest about constraints.
+          </div>
+        </div>
+
+        <div class="field">
+          <label>When can you start? <span class="required-star">*</span></label>
+          <select id="startWhen" required>
+            <option value="">— Select —</option>
+            <option>Immediately</option>
+            <option>Within 2 weeks</option>
+            <option>Within 1 month</option>
+            <option>More than 1 month — I will explain</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Are you available for shifting schedules (evenings, overnight, weekends)? <span class="required-star">*</span></label>
+          <div class="radio-group">
+            <label class="radio-item">
+              <input type="radio" name="shiftAvail" value="yes" required>
+              <span>Yes — I am available for all shifts</span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="shiftAvail" value="partial">
+              <span>Partially available — I have some constraints I will explain</span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="shiftAvail" value="dayonly">
+              <span>Day shift only</span>
+            </label>
+          </div>
+        </div>
+        <div class="field">
+          <label>Do you have any other employment or commitments that would affect your availability? <span class="required-star">*</span></label>
+          <div class="radio-group">
+            <label class="radio-item">
+              <input type="radio" name="otherWork" value="no" required>
+              <span>No — this would be my only employment</span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="otherWork" value="yes">
+              <span>Yes — I have another commitment (describe in next question)</span>
+            </label>
+          </div>
+        </div>
+        <div class="field">
+          <label>If yes above — please describe your other commitment and how it would not conflict with this role</label>
+          <textarea id="otherCommit" placeholder="Optional if you answered No above."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION H: REFERENCES ── -->
+    <div class="section">
+      <div class="section-head" style="background:var(--navy)">
+        📞 H. Character References
+      </div>
+      <div class="section-body">
+        <div class="compliance-tags">
+          <span class="ctag" style="background:#EEF1F8;color:var(--navy)">MOO Requirement</span>
+          <span class="ctag" style="background:#EEF8F8;color:var(--teal)">DSWD Safe Recruitment</span>
+        </div>
+        <div class="warn-box">
+          Two references are required. References must not be relatives. They must be people who know your character and work. We will call both references before making any offer. References will be asked specifically about your work with children or vulnerable people, and your professional conduct.
+        </div>
+        <div class="field">
+          <label>Reference 1 — Full Name <span class="required-star">*</span></label>
+          <input type="text" id="ref1name" placeholder="Full name" required>
+        </div>
+        <div class="field">
+          <label>Reference 1 — Relationship to You <span class="required-star">*</span></label>
+          <input type="text" id="ref1rel" placeholder="e.g. Former supervisor, pastor, professor, colleague" required>
+        </div>
+        <div class="field">
+          <label>Reference 1 — Mobile Number <span class="required-star">*</span></label>
+          <input type="tel" id="ref1phone" placeholder="09XX XXX XXXX" required>
+        </div>
+        <div class="field">
+          <label>Reference 2 — Full Name <span class="required-star">*</span></label>
+          <input type="text" id="ref2name" placeholder="Full name" required>
+        </div>
+        <div class="field">
+          <label>Reference 2 — Relationship to You <span class="required-star">*</span></label>
+          <input type="text" id="ref2rel" placeholder="e.g. Former supervisor, pastor, professor, colleague" required>
+        </div>
+        <div class="field">
+          <label>Reference 2 — Mobile Number <span class="required-star">*</span></label>
+          <input type="tel" id="ref2phone" placeholder="09XX XXX XXXX" required>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CONSENT & SUBMIT ── -->
+    <div class="submit-section">
+      <div class="consent-box">
+        <strong>Data Privacy Consent (RA 10173)</strong><br><br>
+        I understand that the information I provide in this form will be used by A Safe Haven Children's Home Foundation, Inc. solely for the purpose of evaluating my application for employment. My information will be kept confidential and will not be shared with unauthorized parties. If I am not hired, my application information will be retained for a reasonable period in accordance with Safe Haven's data retention policy, then securely disposed of.<br><br>
+        I also declare that all information I have provided in this form is true and accurate to the best of my knowledge. I understand that providing false or misleading information is grounds for disqualification or termination of employment if discovered after hiring.
+        <div class="consent-check">
+          <input type="checkbox" id="privacyConsent">
+          <label for="privacyConsent" style="color:var(--teal2);font-size:13px;cursor:pointer">
+            I have read and I agree to the above Data Privacy Consent and Declaration of Truth.
+          </label>
+        </div>
+      </div>
+      <button class="submit-btn" id="submit-btn" onclick="submitForm()" disabled>
+        Submit My Application →
+      </button>
+      <div style="font-size:11px;color:var(--gray);text-align:center;margin-top:12px;line-height:1.6">
+        After submitting, Safe Haven HR will review your responses within 3–5 business days.<br>
+        If your application proceeds, we will contact you via email or the mobile number you provided.
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /form-container -->
+
+<!-- SUCCESS SCREEN -->
+<div id="success-screen" style="display:none;min-height:100vh;background:var(--navy);display:none;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:40px 24px">
+  <div style="font-size:64px;margin-bottom:20px">✅</div>
+  <h2 style="color:var(--white);font-size:22px;margin-bottom:12px">Application Submitted!</h2>
+  <p style="color:var(--teal2);font-size:14px;line-height:1.8;max-width:360px">
+    Thank you for applying to A Safe Haven Children's Home Foundation, Inc.<br><br>
+    Our HR team will review your application within <strong>3–5 business days</strong>.<br><br>
+    We will contact you via <strong>email or the mobile number you provided</strong>.<br><br>
+    <em>For the children in our care — thank you for taking this step.</em>
+  </p>
+  <div style="margin-top:24px;font-size:11px;color:rgba(255,255,255,0.4)">
+    A Safe Haven Children's Home Foundation, Inc. · Davao City, Philippines
+  </div>
+</div>
+
+<script>
+
+// ── ROLE DEFINITIONS ──────────────────────────────────────
+
+const ROLES = {
+  houseparent: {
+    label: "House Parent",
+    color: "#1B2B4B",
+    dswd: ["DSWD AO 16 s.2004", "RA 7610", "MOO Appendix 15-A"],
+    shiftWarning: true,
+    questions: [
+      {
+        id: "hp1",
+        label: "Describe what you think a typical day looks like for a House Parent at a children's residential home — from morning to evening. *",
+        type: "textarea",
+        placeholder: "Be specific about routines, responsibilities, and what you would do.",
+        required: true,
+      },
+      {
+        id: "hp2",
+        label: "A child in your house is having a very hard night — crying, upset, refusing to sleep. How would you handle this? *",
+        type: "textarea",
+        placeholder: "Walk me through your response step by step.",
+        required: true,
+      },
+      {
+        id: "hp3",
+        label: "What does positive discipline look like to you with a 9-year-old who frequently breaks house rules? *",
+        type: "textarea",
+        placeholder: "Give a specific example of how you would handle this.",
+        required: true,
+      },
+      {
+        id: "hp4",
+        label: "Are you applying for Level 1 (entry) or Level 2 (senior/provisional)?",
+        type: "radio",
+        options: [
+          "Level 1 — Entry / Foundational role",
+          "Level 2 Provisional — I have a college degree and relevant experience",
+          "Level 2 Provisional — I am a current Level 1 HP with 1+ year experience at Safe Haven",
+          "Not sure yet — I would like guidance from HR",
+        ],
+        required: false,
+      },
+      {
+        id: "hp5",
+        label: "Do you have any ministry training or Christian counseling background?",
+        type: "textarea",
+        placeholder: "Describe briefly. This is preferred but not required for Level 1.",
+        required: false,
+      },
+    ],
+  },
+
+  socialworker: {
+    label: "Social Worker / RSW",
+    color: "#2A7A7A",
+    dswd: ["DSWD AO 16 s.2004", "RA 9442 (RSW Act)", "NACC/RACCO Standards", "MOO Child Dev Dept."],
+    shiftWarning: false,
+    questions: [
+      {
+        id: "sw1",
+        label: "Describe your experience with case management — specifically how you have written or contributed to a case study, CMIP, or similar documentation. *",
+        type: "textarea",
+        placeholder: "Be specific. What format did you use, for what population, and in what setting?",
+        required: true,
+      },
+      {
+        id: "sw2",
+        label: "Have you worked with DSWD, RACCO, or NACC before? If yes, describe the nature of that coordination. *",
+        type: "textarea",
+        placeholder: "Describe what you did, in what context, and for what purpose.",
+        required: true,
+      },
+      {
+        id: "sw3",
+        label: "A child tells you during a case conference that they do not want to be reunified with their family. How do you handle this in your case planning? *",
+        type: "textarea",
+        placeholder: "Walk me through your professional and ethical approach.",
+        required: true,
+      },
+      {
+        id: "sw4",
+        label: "You observe what you believe is abuse of a child by a staff member. What is your immediate response? *",
+        type: "textarea",
+        placeholder: "Be specific about who you report to and what you document.",
+        required: true,
+      },
+      {
+        id: "sw5",
+        label: "What is your current PRC license status?",
+        type: "radio",
+        options: [
+          "Valid and current — I will provide a copy",
+          "Expired — I am in the process of renewal",
+          "I do not yet have a PRC license (Note: this is a disqualifier for RSW positions)",
+        ],
+        required: false,
+      },
+    ],
+  },
+
+  admin: {
+    label: "Admin / Finance / HR",
+    color: "#C8941A",
+    dswd: ["DSWD AO 16 s.2004", "RA 10173 (Data Privacy)", "MOO Admin Dept."],
+    shiftWarning: false,
+    questions: [
+      {
+        id: "adm1",
+        label: "Describe your experience with administrative, finance, or HR work. What systems or tools have you used? *",
+        type: "textarea",
+        placeholder: "Be specific about what you did, in what kind of organization, and how long.",
+        required: true,
+      },
+      {
+        id: "adm2",
+        label: "Have you handled confidential employee or client records before? How did you protect that information? *",
+        type: "textarea",
+        placeholder: "Describe your approach to record confidentiality and data privacy.",
+        required: true,
+      },
+      {
+        id: "adm3",
+        label: "This is a nonprofit / social welfare organization. How is working here different from a corporate office, and why does that difference matter to you?",
+        type: "textarea",
+        placeholder: "Share your honest perspective.",
+        required: false,
+      },
+      {
+        id: "adm4",
+        label: "Although this is an office role, all Safe Haven staff are in a children's home environment. What does that mean to you in terms of your conduct and awareness on the premises?",
+        type: "textarea",
+        placeholder: "Describe how you would conduct yourself knowing you are working in a residential care facility for children.",
+        required: true,
+      },
+    ],
+  },
+
+  teacher: {
+    label: "Teacher / ALS Facilitator",
+    color: "#1A6B3C",
+    dswd: ["DSWD AO 16 s.2004", "RA 7610", "DepEd ALS Standards", "MOO Education Program"],
+    shiftWarning: false,
+    questions: [
+      {
+        id: "tch1",
+        label: "Describe your teaching or facilitation experience. What age groups and subjects have you worked with? *",
+        type: "textarea",
+        placeholder: "Be specific about where you taught, for how long, and what approach you used.",
+        required: true,
+      },
+      {
+        id: "tch2",
+        label: "The children at Safe Haven have experienced trauma, loss, and disrupted schooling. How would you adapt your teaching approach for this context? *",
+        type: "textarea",
+        placeholder: "Be honest about your experience or how you would prepare.",
+        required: true,
+      },
+      {
+        id: "tch3",
+        label: "A student in your class is completely disengaged, refuses to participate, and sometimes disrupts the class. What do you do? *",
+        type: "textarea",
+        placeholder: "Walk me through your response — before, during, and after class.",
+        required: true,
+      },
+      {
+        id: "tch4",
+        label: "Are you familiar with the ALS (Alternative Learning System) program? Describe your experience if any.",
+        type: "textarea",
+        placeholder: "Optional if applying for teacher role, important if applying for ALS Facilitator.",
+        required: false,
+      },
+    ],
+  },
+
+  cook: {
+    label: "Cook / Kitchen Staff",
+    color: "#6B7280",
+    dswd: ["DSWD AO 16 s.2004", "RA 10611 (Food Safety)", "MOO Admin Dept."],
+    shiftWarning: true,
+    questions: [
+      {
+        id: "ck1",
+        label: "Describe your cooking experience — where, for how many people, and what kinds of food? *",
+        type: "textarea",
+        placeholder: "Be specific. Institutional cooking (schools, hospitals, care facilities) experience is especially relevant.",
+        required: true,
+      },
+      {
+        id: "ck2",
+        label: "Do you have any food safety training or certification (e.g. NCII in Food and Beverage, health card, food safety training)? *",
+        type: "textarea",
+        placeholder: "List any training, certification, or current health card status.",
+        required: true,
+      },
+      {
+        id: "ck3",
+        label: "One of the children has a severe food allergy that was not in the original meal plan. You discover this during meal preparation. What do you do? *",
+        type: "textarea",
+        placeholder: "Walk through your response step by step.",
+        required: true,
+      },
+      {
+        id: "ck4",
+        label: "Although you are in the kitchen, you are working in a children's home. What does that mean for how you conduct yourself, especially around the children you may encounter? *",
+        type: "textarea",
+        placeholder: "Describe your understanding of child safeguarding as it applies to support staff.",
+        required: true,
+      },
+    ],
+  },
+};
+
+// ── STATE ─────────────────────────────────────────────────
+let currentRole = null;
+
+// ── ROLE SELECTION ────────────────────────────────────────
+function selectRole(role) {
+  currentRole = role;
+  document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-' + role).classList.add('active');
+  document.getElementById('form-body').style.display = 'block';
+
+  // Show/hide role-specific education blocks
+  document.querySelectorAll('.role-section-block').forEach(el => el.classList.remove('visible'));
+  if (role === 'socialworker') {
+    document.getElementById('edu-sw')?.classList.add('visible');
+  }
+  if (role === 'teacher') {
+    document.getElementById('edu-teacher')?.classList.add('visible');
+  }
+  if (role === 'houseparent' || role === 'cook') {
+    document.getElementById('avail-shift')?.classList.add('visible');
+  }
+
+  // Render role-specific questions
+  const def = ROLES[role];
+  const head = document.getElementById('role-q-head');
+  const body = document.getElementById('role-q-body');
+  head.textContent = `🎯 E. ${def.label} — Role-Specific Questions`;
+  head.style.background = def.color;
+
+  // Build compliance tags
+  const tags = def.dswd.map(t =>
+    `<span class="ctag" style="background:#EEF1F8;color:var(--navy)">${t}</span>`
+  ).join('');
+
+  let html = `<div class="compliance-tags">${tags}</div>`;
+
+  def.questions.forEach(q => {
+    html += `<div class="field">`;
+    html += `<label>${q.label}</label>`;
+    if (q.type === 'textarea') {
+      html += `<textarea id="${q.id}" placeholder="${q.placeholder}" ${q.required ? 'required' : ''}></textarea>`;
+    } else if (q.type === 'radio') {
+      html += `<div class="radio-group">`;
+      q.options.forEach((opt, i) => {
+        html += `<label class="radio-item"><input type="radio" name="${q.id}" value="${i}"><span>${opt}</span></label>`;
+      });
+      html += `</div>`;
+    }
+    html += `</div>`;
+  });
+
+  body.innerHTML = html;
+
+  // Scroll to form
+  setTimeout(() => {
+    document.getElementById('form-body').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+
+  updateProgress();
+}
+
+// ── PROGRESS ──────────────────────────────────────────────
+function updateProgress() {
+  const bar = document.getElementById('progress-bar');
+  const allTextareas = document.querySelectorAll('textarea[required]');
+  const filled = Array.from(allTextareas).filter(t => t.value.trim().length > 20).length;
+  const pct = allTextareas.length > 0 ? Math.round((filled / allTextareas.length) * 100) : 0;
+  bar.style.width = pct + '%';
+}
+
+document.addEventListener('input', () => {
+  updateProgress();
+  const consent = document.getElementById('privacyConsent');
+  const btn = document.getElementById('submit-btn');
+  if (btn && consent) {
+    btn.disabled = !consent.checked || !currentRole;
+  }
+});
+
+document.addEventListener('change', () => {
+  const consent = document.getElementById('privacyConsent');
+  const btn = document.getElementById('submit-btn');
+  if (btn && consent) {
+    btn.disabled = !consent.checked || !currentRole;
+  }
+});
+
+// ── SUBMIT ────────────────────────────────────────────────
+function submitForm() {
+  // Validate required fields
+  const required = document.querySelectorAll('[required]');
+  let missing = [];
+  required.forEach(el => {
+    if (el.type === 'radio') return; // handled separately
+    if (!el.value.trim()) {
+      missing.push(el.closest('.field')?.querySelector('label')?.textContent || el.id);
+      el.style.borderColor = 'var(--red)';
+    } else {
+      el.style.borderColor = '';
+    }
+  });
+
+  // Check NBI radio
+  const nbiOk = document.querySelector('input[name="nbiOk"]:checked');
+  if (nbiOk && nbiOk.value === 'no') {
+    alert('We are sorry — an NBI Clearance is required for all positions at Safe Haven. This is a DSWD requirement for staff working with children (AO 16 s.2004). We cannot proceed without it. If you have questions, please contact us via Messenger.');
+    return;
+  }
+
+  if (missing.length > 0) {
+    alert('Please complete all required fields (marked with *) before submitting.');
+    return;
+  }
+
+  // Collect data
+  const formData = {
+    submittedAt: new Date().toISOString(),
+    role: currentRole,
+    roleName: ROLES[currentRole]?.label,
+    name: document.getElementById('fullName')?.value,
+    phone: document.getElementById('phone')?.value,
+    email: document.getElementById('email')?.value,
+    city: document.getElementById('city')?.value,
+  };
+
+  // In production: POST to your server / Google Apps Script endpoint
+  // For now: show success screen
+  console.log('Form submitted:', formData);
+
+  document.getElementById('form-container').style.display = 'none';
+  const s = document.getElementById('success-screen');
+  s.style.display = 'flex';
+  s.style.flexDirection = 'column';
+  s.style.alignItems = 'center';
+  s.style.justifyContent = 'center';
+  window.scrollTo(0, 0);
+}
+</script>
+</body>
+</html>
