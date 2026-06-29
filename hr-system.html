@@ -18,6 +18,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif}
 <script type="text/babel" data-presets="react">
 const {useState,useEffect,useRef,useCallback}=React;
 
+// ── Safe Haven API Configuration ──────────────────────────────
+// Replace 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 with your Anthropic API key
+const SAFE_HAVEN_API_KEY = "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";
+
 // ═══════════════════════════════════════════════════════════════════
 // SAFE HAVEN CHILDREN'S HOME FOUNDATION, INC.
 // Complete HR System — Phase 1
@@ -265,12 +269,12 @@ function Recruitment() {
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
-       headers: { 
-  "Content-Type": "application/json",
-  "x-api-key": "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",
-  "anthropic-version": "2023-06-01",
-  "anthropic-dangerous-direct-browser-access": "true"
-},
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": SAFE_HAVEN_API_KEY,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true"
+        },
         body: JSON.stringify({
           model: "claude-sonnet-4-6", max_tokens: 1200,
           messages: [{ role: "user", content: `You are a child-safe HR screener for A Safe Haven Children's Home Foundation, Inc. — a DSWD-accredited residential child care facility in Davao City, Philippines.\n\nRole being screened: ${ROLE_LABELS[selectedRole]}\n\nSafe Haven values: Love, Joy, Excellence, Faithfulness, Respect.\nAll staff must comply with DSWD AO 16 s.2004, RA 7610, RA 10173, RA 11313.\nChild protection is non-negotiable. NBI Clearance is a hard requirement.\n\nReview this applicant's written response and provide:\n1. SUITABILITY SCORE (1-10) for child-safe ${ROLE_LABELS[selectedRole]} work\n2. GREEN FLAGS — positive indicators (specific quotes)\n3. RED FLAGS — concerning signals or gaps (specific quotes or absences)\n4. CHILD SAFETY SIGNALS — anything suggesting risk or strength in child protection awareness\n5. VERIFICATION NEEDED — what HR must manually confirm\n6. RECOMMENDED NEXT STEP: "Proceed to Aptitude Test" / "Hold — clarify first" / "Do Not Proceed"\n7. RATIONALE (2-3 sentences)\n\nBe firm. Quote actual words. Do not soften red flags.\n\nApplicant Response:\n${applicantText}` }]
@@ -1251,7 +1255,12 @@ function HRAssistant() {
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method:"POST",
-        headers:{ "Content-Type":"application/json", "x-api-key":"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", "anthropic-version":"2023-06-01", "anthropic-dangerous-direct-browser-access":"true" },
+        headers:{
+          "Content-Type":"application/json",
+          "x-api-key": SAFE_HAVEN_API_KEY,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true"
+        },
         body:JSON.stringify({
           model:"claude-sonnet-4-6", max_tokens:900,
           system:`You are the HR assistant for A Safe Haven Children's Home Foundation, Inc., a DSWD-accredited residential child care facility in Davao City, Philippines. You answer questions for Jackson (HR), supervisors, and the Executive Director.
@@ -1272,7 +1281,51 @@ KEY POLICIES:
 - Salaries: House Parent L1 PHP 13,260 / L2 Provisional PHP 14,000 / L2 Full PHP 14,740.
 
 For sensitive matters (termination, final pay, discipline), always recommend human HR and legal review.
-Be warm, practical, and concise. You can answer in English or Filipino.`,
+Be warm, practical, and concise. You can answer in English or Filipino.
+
+HOUSE PARENT TRAINING MODULES — ALL 18 MODULES:
+You know the content of all 18 Safe Haven training modules. Jackson and supervisors can ask about any module.
+
+MODULE 1 — HP Role: Identity, Purpose, Responsibility. Professional caregiving role. Mandatory reporter. Reports to Child Development Supervisor. Core values: Love, Joy, Excellence, Faithfulness, Respect.
+
+MODULE 2 — Understanding Children in Care. Trauma, abandonment, neglect, abuse backgrounds. Behavior = communication of unmet needs. Case plan managed by social worker.
+
+MODULE 3 — Trauma-Informed Care (REQUIRED FOR HP LEVEL 2 PROMOTION — MOO APP.15-A). Principles: Safety, Trustworthiness, Choice, Collaboration, Empowerment. Consistent routines, calm regulation, de-escalation techniques.
+
+MODULE 4 — Positive Discipline (REQUIRED FOR HP LEVEL 2 PROMOTION — MOO APP.15-A). Corporal punishment PROHIBITED — CP-05 offense (immediate termination). Positive approaches: calm expectations, natural consequences, co-regulation, redirection.
+
+MODULE 5 — Child Protection and Mandatory Reporting. RA 7610. If disclosure: listen calmly, no confidentiality promise, no self-investigation, document exact words, report to CPO same shift. No progressive discipline for safeguarding offenses.
+
+MODULE 6 — Professional Boundaries. No private closed-space contact, no personal gifts, no personal contact info exchange, appropriate physical contact only in view of others. Over-attachment is a safeguarding risk.
+
+MODULE 7 — Supervision, Routines, Safety Checks. Ratios: 0-3yr=1:5, 4-12yr=1:8, 13-17yr=1:10. Head counts every shift change. Never leave children unsupervised. Stay until qualified replacement arrives.
+
+MODULE 8 — Incident Documentation (REQUIRED FOR HP LEVEL 2 PROMOTION — MOO APP.15-A). Factual, specific, timely, objective. Document same day. Quote children's words exactly. Incident Report required for injury, disclosure, behavioral crisis, medical emergency.
+
+MODULE 9 — Emergency Response. Emergency chain: ensure safety → assess → call supervisor+911 → basic care → stay → document. Specific responses for seizure, choking, bleeding, burns, allergic reaction, head injury, fire.
+
+MODULE 10 — Wellness and Burnout Prevention. Secondary traumatic stress is real. Signs: exhaustion, cynicism, reduced effectiveness. Asking for help mid-shift is policy. Burnout is a child safety risk.
+
+MODULE 11 — Child Rights. UNCRC, RA 7610, RA 9344, DSWD AO 16. Rights to safety, privacy, participation, dignity, education, religion, family. Treat children as whole persons.
+
+MODULE 12 — Permanency Planning. Goal is reintegration, foster care, adoption, or independent living. Support case plan, support family visits, develop life skills. Never promise outcomes about placement.
+
+MODULE 13 — Self-Awareness and Problem Solving. Know your triggers, limits, and biases. Reflective practice. Professional identity: caregiver, not substitute parent.
+
+MODULE 14 — Data Privacy (RA 10173 — REQUIRED ALL STAFF). Never share child info on social media, with friends, or via personal photos. Secure all records. Report accidental disclosure same day. Criminal charges possible for violations.
+
+MODULE 15 — Safe Spaces Act (RA 11313 — REQUIRED ALL STAFF). Prohibits gender-based sexual harassment. Any act toward children also triggers child protection response. CODI handles complaints. Non-retaliation mandatory.
+
+MODULE 16 — First Aid and CPR Awareness (MOO APP.15 — CERTIFICATION REQUIRED SEPARATELY, HAS EXPIRY DATE). Awareness-level only. Emergency chain. Key responses per emergency type. All medical incidents require same-day Incident Report.
+
+MODULE 17 — Drug-Free Workplace (RA 9165 — REQUIRED ALL STAFF). Impairment on shift = child safety risk. Prescription drugs causing drowsiness: inform supervisor before shift. Colleague impairment concern: report to HR immediately — do not confront directly.
+
+MODULE 18 — Receiving and Routing Child Grievances (MOO — REQUIRED ALL STAFF). MOO Grievance Flow: Child → House Parent → Social Worker (same day) → Child Protection Committee → ED → DSWD if required. Non-retaliation is protected. When in doubt whether grievance or disclosure — treat as disclosure and escalate.
+
+HP LEVEL 1 → LEVEL 2 PROMOTION TRAINING REQUIREMENTS (MOO APPENDIX 15-A PATHWAY B):
+Three specifically required trainings: Module 3 (Trauma-Informed Care), Module 4 (Positive Discipline), Module 8 (Documentation Standards).
+Also required: 1+ year service, satisfactory evaluations, no open disciplinary cases, supervisor endorsement, ED approval.
+HP Level 2 Provisional salary: PHP 14,000/month — verify against current Davao City RTWPB-XI wage order before issuing promotion notice.`,
           messages:[
             ...messages.filter(m=>m.role!=="assistant"||messages.indexOf(m)>0).slice(-10).map(m=>({ role:m.role==="assistant"?"assistant":"user", content:m.text })),
             { role:"user", content:userMsg }
