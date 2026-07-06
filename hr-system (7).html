@@ -19,8 +19,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif}
 const {useState,useEffect,useRef,useCallback}=React;
 
 // ── Safe Haven API Configuration ──────────────────────────────
-// Replace YOUR_API_KEY_HERE with your Anthropic API key
-const SAFE_HAVEN_API_KEY = "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";
+// Replace sk-ant-... with your Anthropic API key
+const SAFE_HAVEN_API_KEY = "sk-ant-...";
 
 // ═══════════════════════════════════════════════════════════════════
 // SAFE HAVEN CHILDREN'S HOME FOUNDATION, INC.
@@ -263,6 +263,36 @@ function Recruitment() {
   const [aiLoading, setAiLoading] = useState(false);
   const [applicantText, setApplicantText] = useState("");
   const [selectedRole, setSelectedRole] = useState("houseparent");
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedApplicant, setSelectedApplicant] = useState(null);
+  const [newApplicant, setNewApplicant] = useState({name:"",role:"House Parent I",date:"",status:"Application received",score:"",aiScore:"",note:""});
+  const [applicantList, setApplicantList] = useState([
+    { name: "Arianne Joy Garcia",         role: "House Parent I",    date: "Jun 28", status: "Interview 1 completed — Jul 3 ✓", score: 82, aiScore: 8, flag: false, note: "PRIORITY. Strong on discipline + disclosure. Clarify Kids Attendant scope + housing plan." },
+    { name: "Kate Desiree Virgo",          role: "House Parent I",    date: "Jun 29", status: "Interview 1 completed — Jul 1 ✓", score: null, aiScore: 7, flag: true, note: "⚠️ Licensed RSW. Possible role mismatch. Check with Amy on SW position." },
+    { name: "Mercevet 'Beth' Barera",      role: "House Parent I",    date: "Jun 26", status: "Interview 1 scheduled — Mon 9AM", score: 82, aiScore: 6, flag: true, note: "⚠️ Discipline language needs clarification. Partial availability. Recent surgery." },
+    { name: "Maavelina Campanilla Cariño", role: "House Parent I",    date: "Jun 30", status: "Assessment sent — awaiting result", score: null, aiScore: 8, flag: false, note: "References are relatives — request non-relative refs before proceeding." },
+    { name: "Merriel Amarille",            role: "House Parent I",    date: "Jun 30", status: "Assessment sent — awaiting result", score: null, aiScore: 8, flag: false, note: "Fresh grad BSHS. Strong answers. References are relatives — request non-relative refs." },
+    { name: "Sanita Orlandez",             role: "Cook",              date: "Jun 30", status: "On hold — verify birthdate", score: null, aiScore: 5, flag: true, note: "⚠️ Birthdate listed as 2026 — data entry error. Confirm before proceeding." },
+    { name: "Rechee Bignotia",             role: "Social Worker",     date: "Jul 3",  status: "On hold — verify SW position with Amy", score: null, aiScore: 9, flag: false, note: "Licensed RSW PRC #0051648. Excellent answers. Verify if SW position exists." },
+  ]);
+
+  const addApplicant = () => {
+    if (!newApplicant.name.trim()) return;
+    const today = new Date().toLocaleDateString("en-PH",{month:"short",day:"numeric"});
+    setApplicantList(prev => [...prev, {...newApplicant, date: newApplicant.date || today, flag: false}]);
+    setNewApplicant({name:"",role:"House Parent I",date:"",status:"Application received",score:"",aiScore:"",note:""});
+    setShowAddModal(false);
+  };
+
+  const exportList = () => {
+    const rows = [["Name","Role","Date","Status","Assessment %","AI Score","Notes"]];
+    applicantList.forEach(a => rows.push([a.name,a.role,a.date,a.status,a.score||"",a.aiScore||"",a.note||""]));
+    const csv = rows.map(r=>r.map(c=>`"${c}"`).join(",")).join("
+");
+    const blob = new Blob([csv],{type:"text/csv"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href=url; a.download="SafeHaven_Applicants.csv"; a.click();
+  };
 
   const ROLE_LABELS = { houseparent:"House Parent", socialworker:"Social Worker / RSW", admin:"Admin / Finance / HR", teacher:"Teacher / ALS", cook:"Cook / Kitchen" };
 
@@ -329,7 +359,7 @@ function Recruitment() {
               </tr>
             </thead>
             <tbody>
-              {sampleApplicants.map((a, i) => (
+              {applicantList.map((a, i) => (
                 <tr key={i} style={{ background: i % 2 === 0 ? T.cream : T.white, borderBottom: `1px solid ${T.grayL}` }}>
                   <td style={{ padding: "9px 12px" }}>
                     <div style={{ fontWeight:600,color:T.navy,fontSize:12 }}>{a.name}</div>
@@ -341,15 +371,93 @@ function Recruitment() {
                   <td style={{ padding: "9px 12px",fontWeight:700,color:a.score>=70?T.green:a.score>=55?T.amber:T.gray }}>{a.score?`${a.score}%`:"—"}</td>
                   <td style={{ padding: "9px 12px",fontWeight:700,color:a.aiScore>=7?T.green:a.aiScore>=5?T.amber:T.gray }}>{a.aiScore?`${a.aiScore}/10`:"—"}</td>
                   <td style={{ padding: "9px 12px" }}>{a.flag ? "🚨 FLAG" : "✓"}</td>
-                  <td style={{ padding: "9px 12px" }}><Btn size="sm" onClick={() => {}}>Review</Btn></td>
+                  <td style={{ padding: "9px 12px" }}><Btn size="sm" onClick={() => setSelectedApplicant(a)} color={T.teal}>Review</Btn></td>
                 </tr>
               ))}
             </tbody>
           </table>
           <div style={{ marginTop: 16, display: "flex", gap: 10 }}>
-            <Btn color={T.navy} onClick={() => {}}>+ Add Applicant</Btn>
-            <Btn outline color={T.teal} onClick={() => {}}>📤 Export List</Btn>
+            <Btn color={T.navy} onClick={() => setShowAddModal(true)}>+ Add Applicant</Btn>
+            <Btn outline color={T.teal} onClick={exportList}>📤 Export List</Btn>
           </div>
+          {/* ADD APPLICANT MODAL */}
+          {showAddModal && (
+            <div style={{ position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center" }}>
+              <div style={{ background:T.white,borderRadius:16,padding:28,width:520,maxWidth:"90vw",boxShadow:"0 20px 60px rgba(0,0,0,0.3)" }}>
+                <div style={{ fontSize:16,fontWeight:800,color:T.navy,marginBottom:20 }}>+ Add New Applicant</div>
+                {[
+                  {label:"Full Name *",key:"name",type:"text",placeholder:"e.g. Maria Santos"},
+                  {label:"Role Applied",key:"role",type:"select",options:["House Parent I","House Parent II","Social Worker","Cook","Teacher","Admin","Driver","Other"]},
+                  {label:"Date Applied",key:"date",type:"text",placeholder:"e.g. Jul 5"},
+                  {label:"Current Status",key:"status",type:"select",options:["Application received","AI Screen pending","Assessment sent","Assessment complete","Interview 1 scheduled","Interview 1 done","References pending","Interview 2 scheduled","Offer pending","Hired","Declined","Withdrawn"]},
+                  {label:"Assessment Score %",key:"score",type:"text",placeholder:"e.g. 82"},
+                  {label:"AI Screen Score /10",key:"aiScore",type:"text",placeholder:"e.g. 8"},
+                  {label:"Notes / Flags",key:"note",type:"text",placeholder:"Key observations, flags, next steps"},
+                ].map(field => (
+                  <div key={field.key} style={{ marginBottom:12 }}>
+                    <div style={{ fontSize:11,fontWeight:700,color:T.dark,marginBottom:4 }}>{field.label}</div>
+                    {field.type==="select" ? (
+                      <select value={newApplicant[field.key]} onChange={e=>setNewApplicant(p=>({...p,[field.key]:e.target.value}))}
+                        style={{ width:"100%",padding:"8px 10px",borderRadius:8,border:`1.5px solid ${T.grayL}`,fontSize:13,fontFamily:"inherit" }}>
+                        {field.options.map(o=><option key={o}>{o}</option>)}
+                      </select>
+                    ) : (
+                      <input type="text" value={newApplicant[field.key]} placeholder={field.placeholder}
+                        onChange={e=>setNewApplicant(p=>({...p,[field.key]:e.target.value}))}
+                        style={{ width:"100%",padding:"8px 10px",borderRadius:8,border:`1.5px solid ${T.grayL}`,fontSize:13,fontFamily:"inherit",boxSizing:"border-box" }} />
+                    )}
+                  </div>
+                ))}
+                <div style={{ display:"flex",gap:10,marginTop:20 }}>
+                  <button onClick={addApplicant} style={{ background:T.navy,color:T.white,border:"none",borderRadius:8,padding:"10px 20px",fontWeight:700,cursor:"pointer",fontSize:13 }}>Save Applicant</button>
+                  <button onClick={()=>setShowAddModal(false)} style={{ background:T.grayL,color:T.dark,border:"none",borderRadius:8,padding:"10px 20px",fontWeight:600,cursor:"pointer",fontSize:13 }}>Cancel</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* REVIEW APPLICANT MODAL */}
+          {selectedApplicant && (
+            <div style={{ position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.5)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center" }}>
+              <div style={{ background:T.white,borderRadius:16,padding:28,width:580,maxWidth:"90vw",boxShadow:"0 20px 60px rgba(0,0,0,0.3)",maxHeight:"80vh",overflowY:"auto" }}>
+                <div style={{ fontSize:16,fontWeight:800,color:T.navy,marginBottom:4 }}>{selectedApplicant.name}</div>
+                <div style={{ fontSize:13,color:T.gray,marginBottom:20 }}>{selectedApplicant.role} · Applied {selectedApplicant.date}</div>
+                {[
+                  {label:"Current Status",value:selectedApplicant.status},
+                  {label:"Assessment Score",value:selectedApplicant.score?`${selectedApplicant.score}%`:"Not yet completed"},
+                  {label:"AI Screen Score",value:selectedApplicant.aiScore?`${selectedApplicant.aiScore}/10`:"Not yet scored"},
+                  {label:"Safeguarding Flag",value:selectedApplicant.flag?"⚠️ YES — review required":"✓ No flags"},
+                  {label:"Notes",value:selectedApplicant.note||"No notes"},
+                ].map(item=>(
+                  <div key={item.label} style={{ padding:"10px 0",borderBottom:`1px solid ${T.grayL}` }}>
+                    <div style={{ fontSize:11,fontWeight:700,color:T.gray,marginBottom:4 }}>{item.label}</div>
+                    <div style={{ fontSize:14,color:item.label==="Safeguarding Flag"&&selectedApplicant.flag?T.red:T.dark,fontWeight:item.label==="Safeguarding Flag"?700:400 }}>{item.value}</div>
+                  </div>
+                ))}
+                <div style={{ marginTop:20 }}>
+                  <div style={{ fontSize:12,fontWeight:700,color:T.navy,marginBottom:8 }}>NEXT STEP OPTIONS</div>
+                  <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:8 }}>
+                    {["Send Assessment Link","Schedule Interview 1","Request References","Schedule Interview 2","Recommend to Amy","Decline Application"].map(action=>(
+                      <button key={action} onClick={()=>{
+                        const statusMap = {
+                          "Send Assessment Link":"Assessment sent",
+                          "Schedule Interview 1":"Interview 1 scheduled",
+                          "Request References":"References pending",
+                          "Schedule Interview 2":"Interview 2 scheduled",
+                          "Recommend to Amy":"Pending ED review",
+                          "Decline Application":"Declined"
+                        };
+                        setApplicantList(prev=>prev.map(a=>a.name===selectedApplicant.name?{...a,status:statusMap[action]||a.status}:a));
+                        setSelectedApplicant(null);
+                      }} style={{ padding:"9px 12px",borderRadius:8,border:`1.5px solid ${action==="Decline Application"?T.red:T.teal}`,background:T.white,color:action==="Decline Application"?T.red:T.teal,cursor:"pointer",fontSize:12,fontWeight:600 }}>{action}</button>
+                    ))}
+                  </div>
+                </div>
+                <button onClick={()=>setSelectedApplicant(null)} style={{ marginTop:16,background:T.grayL,color:T.dark,border:"none",borderRadius:8,padding:"10px 20px",fontWeight:600,cursor:"pointer",fontSize:13,width:"100%" }}>Close</button>
+              </div>
+            </div>
+          )}
+
           <div style={{ marginTop: 14, background: T.navy + "06", borderRadius: 8, padding: 12, fontSize: 11, color: T.gray, lineHeight: 1.7 }}>
             <strong>Phase 2:</strong> Applicants submitted directly from the pre-screen form. Tracker auto-updates. Sprouts notified when hire is confirmed.
           </div>
